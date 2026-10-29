@@ -1,0 +1,5 @@
+dist
+coverage
+package-lock.json
+# Prettier pads Markdown tables, so one edited row rewrites the whole table in diffs.
+*.md
