@@ -47,6 +47,10 @@ Key product, design and engineering decisions, with the reason behind each one. 
 | 2026-10-29 | TypeScript pinned to 6.0 instead of 7 | typescript-eslint supports TypeScript < 6.1 only; ESLint with type-aware rules matters more than the faster compiler. Revisit when typescript-eslint supports 7 |
 | 2026-10-29 | Prettier formats code and config, not Markdown | Prettier pads Markdown tables, so editing one row rewrites the whole table in diffs |
 | 2026-10-29 | `.gitattributes` forces LF line endings | Development on Windows, CI on Linux; avoids whole-file diffs from CRLF/LF changes |
+| 2026-10-29 | Playwright for end-to-end tests in `e2e/`, run against the production build (`build` + `preview`) | Tests the same bundle that is deployed to previews; dev mode can hide bundling bugs. A separate folder keeps Playwright and Vitest from collecting each other's files |
+| 2026-10-29 | End-to-end tests run in Chromium only; no Edge project | Edge is Chromium-based, so a second project would double run time for little extra signal. Edge stays a target browser for manual exploratory sessions |
+| 2026-10-29 | `eslint-plugin-playwright` with `valid-title` requiring titles to start with `@TAN-<n> ` | Enforces the key-in-title convention automatically and catches common end-to-end mistakes (missing `await`, fixed waits, focused tests) |
+| 2026-10-29 | Locators by role and label first; test ids only as a last resort | Tests interact the way users and assistive technology do, so they also guard accessibility |
 | 2026-10-28 | Planned infrastructure: Cloudflare Pages (hosting), Sentry (errors), PostHog (usage events only, never content); a backend (Cloudflare Worker or Supabase) only when integrations arrive | Free tiers that allow commercial use |
 | 2026-10-29 | PR previews on Cloudflare Pages from v0.1 (TAN-11); production deployment stays in v1.0 | Every story can be tested in the browser before merging, at no cost |
 
