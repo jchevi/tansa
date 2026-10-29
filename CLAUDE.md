@@ -41,6 +41,7 @@ It is built by one person (a senior QA engineer, intermediate programmer) as a p
 - Acceptance criteria met.
 - Stories: a Playwright test titled `@TAN-x …`. Tasks: an automated check of their criteria (Vitest unit test, lint rule or CI check) referencing the key.
 - Lint, typecheck and tests green in CI.
+- Stories: an exploratory session on the PR preview (QA column), with no open bugs, before merging.
 - PR merged with the key in branch and title.
 - Preview deployed.
 

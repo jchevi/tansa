@@ -55,7 +55,8 @@ Key product, design and engineering decisions, with the reason behind each one. 
 | Date | Decision | Why |
 | --- | --- | --- |
 | 2026-10-28 | Jira Cloud (Free), team-managed space, key `TAN`. Scrum template: 2-week sprints with a Sprint Goal; releases v0.1, v0.2, v0.3, v1.0 (MVP) and v2 (parking). WIP limit 1 in progress | Fixed-length sprints per the Scrum Guide; ready for future collaborators |
-| 2026-10-29 | Board: To Do · In Progress · Done. Review (open PR + green CI) is part of the Definition of Done, not a column. Blockers use flags | A review column added little for one person |
+| 2026-10-29 | ~~Board: To Do · In Progress · Done. Review (open PR + green CI) is part of the Definition of Done, not a column. Blockers use flags~~ — superseded on 2026-10-29 | — |
+| 2026-10-29 | Board: To Do · In Progress · QA · Done. A story enters QA when its PR is open, CI is green and the preview is deployed; in QA it gets an exploratory session on the preview; bugs found send it back to In Progress; it moves to Done when the session is clean and the PR is merged. Tasks skip QA. Blockers use flags | Exploration on the preview is a distinct step with its own outcome; showing it makes QA work and bounce-backs visible. Tasks are covered by their automated check |
 | 2026-10-28 | Issue types: Epic, Story, Task, Bug, Subtask; spikes are Tasks with the `spike` label. 8 epics by functional area (TAN-1 to TAN-8) | Minimal standard hierarchy; one epic per requirement would be too thin |
 | 2026-10-28 | Native fields only; acceptance criteria in Gherkin inside the description; no estimation at first. Labels: `spike`, `tech-debt`, `a11y`, `performance`, `build-log` | Small scope, little configuration |
 | 2026-10-29 | Edge cases proposed for every story (shift-left) | Gaps surface before code, not after |
@@ -71,6 +72,7 @@ Key product, design and engineering decisions, with the reason behind each one. 
 - Acceptance criteria met.
 - Stories: a Playwright test titled `@TAN-x …`. Tasks: an automated check of their criteria (Vitest unit test, lint rule or CI check) referencing the key.
 - Lint, typecheck and tests green in CI.
+- Stories: an exploratory session on the PR preview (QA column), with no open bugs, before merging.
 - PR merged with the key in branch and title.
 - Preview deployed.
 
