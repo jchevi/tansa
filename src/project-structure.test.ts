@@ -16,4 +16,10 @@ describe('project structure', () => {
     expect(existsSync(readmePath)).toBe(true)
     expect(readFileSync(readmePath, 'utf8')).toContain(`src/${folder}`)
   })
+
+  it('@TAN-10 README states the test data rule', () => {
+    const readme = readFileSync(fromSrc('../README.md'), 'utf8')
+    expect(readme).toContain('## Test data')
+    expect(readme).toContain('No real client names or data')
+  })
 })
