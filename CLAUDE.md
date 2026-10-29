@@ -37,6 +37,15 @@ It is built by one person (a senior QA engineer, intermediate programmer) as a p
 - No AI attribution in commits or PRs (no `Co-Authored-By` trailer).
 - Everything in the repo is in English (code, comments, commits, docs).
 
+## Ticket lifecycle
+1. Move the ticket to **In Progress** (WIP limit 1) and branch from an up-to-date `main`: `TAN-<n>-short-slug`.
+2. Commit with Conventional Commits and the key; open the PR (key in the title, criteria in the body).
+3. Stories: when CI is green and the preview is deployed, move the ticket to **QA** and run the exploratory session on the preview. Bugs found send it back to In Progress.
+4. Merge with a merge commit (the only method the repo allows), once the owner approves.
+5. Delete the branch. GitHub deletes the remote branch on merge; delete the local one with `git branch -d`.
+6. Move the ticket to **Done**.
+7. Sync: `git checkout main && git pull`.
+
 ## Definition of Done
 - Acceptance criteria met.
 - Stories: a Playwright test titled `@TAN-x …`. Tasks: an automated check of their criteria (Vitest unit test, lint rule or CI check) referencing the key.
