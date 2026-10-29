@@ -1,0 +1,14 @@
+// Cloudflare Workers config: static assets only, no Worker script.
+// Workers Builds reads this file to deploy main and every PR preview.
+{
+  "name": "tansa",
+  "compatibility_date": "2026-10-29",
+  "assets": {
+    "directory": "./dist",
+    // Unknown paths return index.html so React handles the route.
+    "not_found_handling": "single-page-application",
+  },
+  "preview_urls": true,
+  // Empty: previews use the same settings as production.
+  "previews": {},
+}
