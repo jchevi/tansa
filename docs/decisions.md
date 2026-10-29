@@ -69,6 +69,7 @@ Key product, design and engineering decisions, with the reason behind each one. 
 | 2026-10-29 | Public GitHub repo from the start. Never secrets or real data in the history | Branch protection is free on public repos; the repo was going public anyway; building in public is part of the portfolio |
 | 2026-10-28 | Sessions can target any app, but public material (tests, demos, screenshots) only uses public or practice apps | No confidential data in public material |
 | 2026-10-28 | Product documentation lives in the repo (`docs/`), no Confluence for now | One source of truth, versioned with the code and readable by Claude Code |
+| 2026-10-29 | Merge commits only (squash and rebase disabled in the repo); head branches are deleted automatically on merge. The full ticket lifecycle lives in `CLAUDE.md` | Each ticket keeps its per-concern commits (e.g. `test(e2e)`, `docs(test)`) in `main`, and the merge commit groups them under the PR. Automatic deletion removes a step nobody has to remember |
 | 2026-10-29 | Definition of Done revised (see below) | The first version could not be met by the bootstrap tasks |
 
 ## Definition of Done
