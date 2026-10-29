@@ -5,16 +5,16 @@ TANSA (探査, "exploration") is a small local-first web app for running explora
 It is built by one person (a senior QA engineer, intermediate programmer) as a public portfolio piece and a way to learn Claude across the whole lifecycle. **Explain the why of non-obvious decisions** in PR descriptions and when asked: the owner wants to understand, not just receive code.
 
 ## Stack
-- Vite + React + TypeScript (`strict: true`)
+- Node 26 (pinned in `.nvmrc` and `engines`)
+- Vite + React + TypeScript (`strict: true`). TypeScript is pinned to 6.0 until typescript-eslint supports 7 (see `docs/decisions.md`).
 - IndexedDB for all data (local-first, no backend)
-- Playwright for end-to-end tests, GitHub Actions for CI
+- Vitest for unit tests, Playwright for end-to-end tests (from TAN-10), GitHub Actions for CI (from TAN-11)
 - Target browsers: Chrome and Edge on Windows (installable PWA from v1.0)
 
 ## Commands
-<!-- Fill in when TAN-9 is done -->
-- `npm run dev` · `npm run build`
-- `npm run lint` · `npm run typecheck` · `npm run format`
-- `npm run test` (unit) · `npm run test:e2e` (Playwright)
+- `npm run dev` · `npm run build` · `npm run preview`
+- `npm run lint` · `npm run typecheck` · `npm run format` · `npm run format:check`
+- `npm run test` (Vitest) · `npm run test:e2e` (Playwright, from TAN-10)
 
 ## Where things are
 - `docs/spec.md`: MVP spec (requirements R1–R15, data model). Source of truth for behaviour.
@@ -27,21 +27,24 @@ It is built by one person (a senior QA engineer, intermediate programmer) as a p
 2. Plan before coding: list the files you will touch and how each acceptance criterion will be tested. Wait for approval on anything non-trivial.
 3. If the ticket is ambiguous or conflicts with the spec or a decision, **stop and ask**. Do not resolve it silently.
 4. Keep scope small: anything not in the ticket goes into a note for a new ticket, not into the code.
-5. Write the Playwright test from the acceptance criteria, then the code.
+5. Write the test from the acceptance criteria first (Playwright for stories, Vitest or another automated check for tasks), see it fail, then write the code.
 
 ## Conventions
 - Branch: `TAN-<n>-short-slug` (e.g. `TAN-18-session-charter`).
 - Commits: Conventional Commits with the key, e.g. `feat(charter): block start until fields are filled [TAN-18]`.
 - PR title starts with the key; the PR body lists each acceptance criterion and where it is tested.
-- Playwright test titles start with the key: `@TAN-18 start is blocked until the charter is complete`.
+- Test titles (Playwright and Vitest) start with the key: `@TAN-18 start is blocked until the charter is complete`.
+- No AI attribution in commits or PRs (no `Co-Authored-By` trailer).
 - Everything in the repo is in English (code, comments, commits, docs).
 
 ## Definition of Done
-- All acceptance criteria met.
-- Playwright test(s) tagged with the ticket key, green.
-- Lint, typecheck and unit tests green in CI.
+- Acceptance criteria met.
+- Stories: a Playwright test titled `@TAN-x …`. Tasks: an automated check of their criteria (Vitest unit test, lint rule or CI check) referencing the key.
+- Lint, typecheck and tests green in CI.
 - PR merged with the key in branch and title.
-- Preview deployed (once deploy exists).
+- Preview deployed.
+
+TAN-9 to TAN-11 bootstrap the tooling: each one meets the DoD items whose tooling already exists, plus its own "Done when".
 
 ## Hard rules
 - **Local-first:** session content (charters, notes, bugs, screenshots) never leaves the browser. No network calls with session data. Analytics and error tracking (v1.0) must never include session content.
