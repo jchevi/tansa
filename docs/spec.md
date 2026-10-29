@@ -221,7 +221,7 @@ The code is built in four releases, each working on its own:
 1. **v0.1** · Home, charter, timer, notes, local persistence, History; project setup, Playwright, CI and PR previews; color tokens and i18n.
 2. **v0.2** · Screenshots, themes and Settings (R13).
 3. **v0.3** · TBS estimate, PROOF debrief, bug detail, export and `.tansa` file, Focus mode and *karesansui* background.
-4. **v1.0** · Installable PWA, Spanish, production deployment on Cloudflare Pages and monitoring.
+4. **v1.0** · Installable PWA, Spanish, production deployment on Cloudflare Workers and monitoring.
 
 End-to-end tests with Playwright ship with every release, not at the end.
 

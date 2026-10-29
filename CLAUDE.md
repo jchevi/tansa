@@ -8,13 +8,14 @@ It is built by one person (a senior QA engineer, intermediate programmer) as a p
 - Node 26 (pinned in `.nvmrc` and `engines`)
 - Vite + React + TypeScript (`strict: true`). TypeScript is pinned to 6.0 until typescript-eslint supports 7 (see `docs/decisions.md`).
 - IndexedDB for all data (local-first, no backend)
-- Vitest for unit tests, Playwright for end-to-end tests (from TAN-10), GitHub Actions for CI (from TAN-11)
+- Vitest for unit tests, Playwright for end-to-end tests, GitHub Actions for CI (`.github/workflows/ci.yml`)
+- Cloudflare Workers (static assets, `wrangler.jsonc`) for PR previews, built by Workers Builds
 - Target browsers: Chrome and Edge on Windows (installable PWA from v1.0)
 
 ## Commands
 - `npm run dev` · `npm run build` · `npm run preview`
 - `npm run lint` · `npm run typecheck` · `npm run format` · `npm run format:check`
-- `npm run test` (Vitest) · `npm run test:e2e` (Playwright, from TAN-10)
+- `npm run test` (Vitest) · `npm run test:e2e` (Playwright)
 
 ## Where things are
 - `docs/spec.md`: MVP spec (requirements R1–R15, data model). Source of truth for behaviour.
@@ -54,7 +55,7 @@ It is built by one person (a senior QA engineer, intermediate programmer) as a p
 - PR merged with the key in branch and title.
 - Preview deployed.
 
-TAN-9 to TAN-11 bootstrap the tooling: each one meets the DoD items whose tooling already exists, plus its own "Done when".
+TAN-9 to TAN-11 bootstrapped the tooling. From TAN-11 on, every ticket meets the full Definition of Done: `main` only accepts a PR whose `checks` and `e2e` jobs pass.
 
 ## Hard rules
 - **Local-first:** session content (charters, notes, bugs, screenshots) never leaves the browser. No network calls with session data. Analytics and error tracking (v1.0) must never include session content.
