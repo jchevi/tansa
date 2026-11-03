@@ -155,7 +155,7 @@ All stories share one persona: a tester running an exploratory session. They are
 - [ ] The interface is available in English and Spanish; English comes first.
 - [ ] No interface text is written in the code: all of it comes from language files.
 - [ ] The default language is the browser's; it can be changed in Settings.
-- [ ] SBTM terms (Charter, Explore / With / To discover, Note / Bug / Issue, PROOF) are not translated.
+- [ ] SBTM terms (Charter, Explore / With / To discover, Note / Bug / Issue, PROOF, TBS) are not translated.
 
 ## P1 and P2 requirements
 
