@@ -20,6 +20,34 @@ const colorAttribute =
 const attributeValue = `/^(?!${allowedColor}|(freeze|remove)$)/i`
 const canvasStyle = 'AssignmentExpression[left.property.name=/^(fill|stroke)Style$/]'
 
+// UI text: any letter in any script, so '60 min' and '保存' are text but '·', '+' and '60'
+// are not. JSXText value is decoded, so &nbsp; is not a letter [TAN-13].
+const letter = '/\\p{L}/u'
+// A string value: a literal, a template without ${}, a ternary branch or the right side of
+// &&, || and ??. Read from a JSX child or attribute container, or an attribute itself.
+const textValues = [
+  `Literal[value=${letter}]`,
+  `TemplateLiteral[expressions.length=0] > TemplateElement[value.raw=${letter}]`,
+  `ConditionalExpression > Literal[value=${letter}]`,
+  `ConditionalExpression > TemplateLiteral[expressions.length=0] > TemplateElement[value.raw=${letter}]`,
+  `LogicalExpression > Literal[value=${letter}]`,
+  `LogicalExpression > TemplateLiteral[expressions.length=0] > TemplateElement[value.raw=${letter}]`,
+]
+const textAttribute =
+  'JSXAttribute[name.name=/^(aria-(label|description|roledescription|placeholder|valuetext)|title|alt|placeholder|label)$/]'
+const dialogCall =
+  'CallExpression:matches([callee.name=/^(alert|confirm|prompt)$/], [callee.object.name="window"][callee.property.name=/^(alert|confirm|prompt)$/])'
+const textSelectors = [
+  `JSXText[value=${letter}]`,
+  ...textValues.map(
+    (value) => `:matches(JSXElement, JSXFragment) > JSXExpressionContainer > ${value}`,
+  ),
+  `${textAttribute} > Literal[value=${letter}]`,
+  ...textValues.map((value) => `${textAttribute} > JSXExpressionContainer > ${value}`),
+  `${dialogCall} > Literal[value=${letter}]`,
+  `${dialogCall} > TemplateLiteral > TemplateElement[value.raw=${letter}]`,
+]
+
 export default defineConfig([
   globalIgnores(['dist', 'coverage', 'playwright-report', 'test-results', 'blob-report']),
   {
@@ -70,6 +98,7 @@ export default defineConfig([
     },
   },
   {
+    // UI text lives only in src/i18n/locales; code uses t() [TAN-13].
     // Colors live only in src/theme/tokens.css; code uses var(--color-*) [TAN-12].
     // Hex is matched anywhere in a string (e.g. '1px solid #fff', fill='#fff'), so a
     // hex-shaped word like '#add' is a false positive: disable the line with a reason.
@@ -120,6 +149,12 @@ export default defineConfig([
           // with ${} carries a value resolved at runtime, so it is allowed [TAN-29].
           message:
             'Canvas cannot read var(): resolve the token with getComputedStyle and assign that value.',
+        })),
+        // In the same rule as the colors: a second block for no-restricted-syntax would
+        // replace these options, not add to them [TAN-13].
+        ...textSelectors.map((selector) => ({
+          selector,
+          message: 'No hard-coded UI text: add it to src/i18n/locales/en.json and use t().',
         })),
       ],
     },
