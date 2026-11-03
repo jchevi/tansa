@@ -8,6 +8,18 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
+// Values a color property may take: a token, color-mix() or url(), or a keyword.
+const allowedColor =
+  '(var|color-mix|url)\\(|(transparent|currentcolor|inherit|initial|unset|revert|none)$'
+// Style object keys that hold a color, as identifiers or quoted (background-color) [TAN-29].
+const colorKey = '/^(color|fill|stroke|background|[a-zA-Z]+Color|[a-z-]+-color)$/'
+// Color attributes on lower-case (DOM and SVG) elements only: <Button color="primary">
+// is a component prop. freeze and remove are SMIL fill modes, not colors [TAN-29].
+const colorAttribute =
+  'JSXOpeningElement[name.name=/^[a-z]/] > JSXAttribute[name.name=/^(fill|stroke|color|stop-color|flood-color|lighting-color|stopColor|floodColor|lightingColor)$/]'
+const attributeValue = `/^(?!${allowedColor}|(freeze|remove)$)/i`
+const canvasStyle = 'AssignmentExpression[left.property.name=/^(fill|stroke)Style$/]'
+
 export default defineConfig([
   globalIgnores(['dist', 'coverage', 'playwright-report', 'test-results', 'blob-report']),
   {
@@ -75,15 +87,39 @@ export default defineConfig([
             selector: `${node}\\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|device-cmyk)\\(/i]`,
             message: 'No hard-coded color functions: use a var(--color-*) token from src/theme.',
           },
+          {
+            // A color-mix() argument that is a word but not var() or a keyword, optionally
+            // after a percentage. Stays inside one level of parentheses, so a later part of
+            // a multi-part value isn't read as an argument [TAN-29].
+            selector: `${node}color-mix\\((?:[^()]|\\([^()]*\\))*?,\\s*(?:[\\d.]+%\\s+)?(?!var\\(|transparent\\b|currentcolor\\b)[a-z]/i]`,
+            message: 'color-mix() takes var(--color-*) tokens, not named or system colors.',
+          },
         ]),
-        {
+        ...[
           // Named and system colors (white, Canvas) on a color property. An allow-list,
           // because the names are too many to list. Shorthands like border are not covered.
-          selector:
-            'Property[key.name=/^(color|fill|stroke|background|[a-zA-Z]+Color)$/][value.value=/^(?!(var|color-mix|url)\\(|(transparent|currentcolor|inherit|initial|unset|revert|none)$)/i]',
+          `Property:matches([key.name=${colorKey}], [key.value=${colorKey}])[value.value=/^(?!${allowedColor})/i]`,
+          // Template literals without ${}: their one piece is the whole value [TAN-29].
+          `Property:matches([key.name=${colorKey}], [key.value=${colorKey}]) > TemplateLiteral[expressions.length=0] > TemplateElement[value.raw=/^(?!${allowedColor})/i]`,
+          // JSX color attributes: a string, {'…'}, {`…`} or either branch of {a ? b : c}.
+          `${colorAttribute} > Literal[value=${attributeValue}]`,
+          `${colorAttribute} > JSXExpressionContainer > Literal[value=${attributeValue}]`,
+          `${colorAttribute} > JSXExpressionContainer > ConditionalExpression > Literal[value=${attributeValue}]`,
+          `${colorAttribute} > JSXExpressionContainer > TemplateLiteral[expressions.length=0] > TemplateElement[value.raw=${attributeValue}]`,
+        ].map((selector) => ({
+          selector,
           message:
             'Color properties take a var(--color-*) token or a keyword (transparent, currentColor, inherit, none).',
-        },
+        })),
+        ...[
+          `${canvasStyle} > :matches(Literal, TemplateLiteral)`,
+          `${canvasStyle} > ConditionalExpression > :matches(Literal, TemplateLiteral)`,
+        ].map((selector) => ({
+          selector,
+          // Any string, tokens included: canvas never resolves var() [TAN-29].
+          message:
+            'Canvas cannot read var(): resolve the token with getComputedStyle and assign that value.',
+        })),
       ],
     },
   },

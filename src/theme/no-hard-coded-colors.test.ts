@@ -58,6 +58,29 @@ describe('stylelint forbids colors outside tokens.css', () => {
     expect(await stylelintRules(code)).toEqual([])
   })
 
+  it.each([
+    ['stop-color', 'a { stop-color: Canvas; }'],
+    ['flood-color', 'a { flood-color: Canvas; }'],
+    ['lighting-color', 'a { lighting-color: Canvas; }'],
+    ['-webkit-text-fill-color', 'a { -webkit-text-fill-color: Canvas; }'],
+    ['-webkit-text-stroke', 'a { -webkit-text-stroke: 1px Canvas; }'],
+    ['a custom property', 'a { --x: Canvas; }'],
+  ])('@TAN-29 reports a system color on %s', async (_property, code) => {
+    expect(await stylelintRules(code)).toContain('declaration-property-value-disallowed-list')
+  })
+
+  // color-named already covered these; kept so a config change can't drop them.
+  it.each([
+    ['stop-color', 'a { stop-color: white; }'],
+    ['a custom property', 'a { --x: white; }'],
+  ])('@TAN-29 reports a named color on %s', async (_property, code) => {
+    expect(await stylelintRules(code)).toContain('color-named')
+  })
+
+  it('@TAN-29 allows a token in a custom property', async () => {
+    expect(await stylelintRules('a { --x: var(--color-mark); }')).toEqual([])
+  })
+
   it('@TAN-12 exempts only tokens.css', async () => {
     expect(await stylelintRules(readFileSync(tokensPath, 'utf8'), tokensPath)).toEqual([])
   })
@@ -90,6 +113,79 @@ describe('eslint forbids colors in TS/TSX', () => {
       fill: 'none',
       boxShadow: '0 0 0 2px color-mix(in srgb, var(--color-bug) 20%, transparent)',
     }} />`
+    expect(await eslintRules(code)).not.toContain('no-restricted-syntax')
+  })
+
+  it.each([
+    ['a named color in a JSX attribute', 'export const a = <rect fill="red" />'],
+    ['a named color in a JSX expression', "export const a = <rect fill={'red'} />"],
+    ['a named color in a JSX template', 'export const a = <rect fill={`red`} />'],
+    [
+      'a named color in a JSX conditional',
+      "export const a = (on: boolean) => <rect fill={on ? 'red' : 'none'} />",
+    ],
+    ['a named color on stopColor', 'export const a = <stop stopColor="white" />'],
+    ['a system color on floodColor', 'export const a = <feFlood floodColor="Canvas" />'],
+    ['a named color on an SVG color attribute', 'export const a = <svg color="red" />'],
+    ['a named color under a quoted key', "export const a = { 'background-color': 'red' }"],
+    ['a named color in a template literal', 'export const a = { color: `white` }'],
+    [
+      'a named color on canvas fillStyle',
+      "export const a = (ctx: CanvasRenderingContext2D) => { ctx.fillStyle = 'red' }",
+    ],
+    [
+      'a token string on canvas strokeStyle',
+      'export const a = (ctx: CanvasRenderingContext2D) => { ctx.strokeStyle = `var(--color-ink)` }',
+    ],
+    [
+      'a named color in a canvas conditional',
+      "export const a = (ctx: CanvasRenderingContext2D, on: boolean, c: string) => { ctx.fillStyle = on ? 'red' : c }",
+    ],
+    ['named colors in color-mix()', "export const a = 'color-mix(in srgb, white 50%, black)'"],
+    [
+      'a named color after a percentage in color-mix()',
+      "export const a = 'color-mix(in srgb, 20% white, var(--color-ink))'",
+    ],
+    [
+      'a system color after a token in color-mix()',
+      "export const a = 'color-mix(in srgb, var(--color-ink) 20%, Canvas)'",
+    ],
+  ])('@TAN-29 reports %s', async (_kind, code) => {
+    expect(await eslintRules(code)).toContain('no-restricted-syntax')
+  })
+
+  it.each([
+    [
+      'keywords and tokens in JSX attributes',
+      'export const a = <rect fill="none" stroke="var(--color-ink)" />',
+    ],
+    [
+      'SMIL fill modes',
+      'export const a = <svg><animate fill="freeze" /><set fill="remove" /></svg>',
+    ],
+    [
+      'a color prop on a component',
+      'const Button = (p: { color: string }) => <b>{p.color}</b>\nexport const a = <Button color="primary" />',
+    ],
+    [
+      'a function call in a JSX attribute',
+      "const pick = (name: string) => `var(--color-${name})`\nexport const a = <rect fill={pick('accent')} />",
+    ],
+    ['a token in a template literal', 'export const a = { color: `var(--color-ink)` }'],
+    ['an interpolated template literal', 'export const a = (c: string) => ({ color: `${c}` })'],
+    [
+      'a variable on canvas fillStyle',
+      'export const a = (ctx: CanvasRenderingContext2D, color: string) => { ctx.fillStyle = color }',
+    ],
+    [
+      'color-mix() over tokens in a multi-part shadow',
+      "export const a = '0 0 0 2px color-mix(in srgb, var(--color-bug) 20%, transparent), inset 0 0 0 1px var(--color-ink)'",
+    ],
+    [
+      'color-mix() with a hue method',
+      "export const a = 'color-mix(in oklch shorter hue, var(--color-ink), var(--color-bug))'",
+    ],
+  ])('@TAN-29 allows %s', async (_kind, code) => {
     expect(await eslintRules(code)).not.toContain('no-restricted-syntax')
   })
 }, 60_000)
