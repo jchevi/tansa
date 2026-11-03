@@ -41,6 +41,28 @@ export default defineConfig([
     },
   },
   {
+    // Colors live only in src/theme/tokens.css; code uses var(--color-*) [TAN-12].
+    // Hex is matched anywhere in a string (e.g. '1px solid #fff'), so a hex-shaped word
+    // like '#add' is a false positive: disable the line with a reason if that happens.
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...['Literal[value=/', 'TemplateElement[value.raw=/'].flatMap((node) => [
+          {
+            selector: `${node}(^|[\\s,(:])#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})\\b/i]`,
+            message: 'No hard-coded hex colors: use a var(--color-*) token from src/theme.',
+          },
+          {
+            selector: `${node}\\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\\(/i]`,
+            message: 'No hard-coded color functions: use a var(--color-*) token from src/theme.',
+          },
+        ]),
+      ],
+    },
+  },
+  {
     files: ['**/*.js'],
     extends: [js.configs.recommended],
     languageOptions: { globals: globals.node },
