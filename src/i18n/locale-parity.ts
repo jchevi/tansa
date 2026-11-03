@@ -14,15 +14,18 @@ export interface LocaleDifferences {
 // i18next plural keys end in _one, _other... (cardinal) or _ordinal_one... (ordinal).
 // A non-plural key must not end in one of these suffixes, or it is read as a plural.
 const pluralSuffix = /_(ordinal_)?(zero|one|two|few|many|other)$/
-// {{minutes}} and {{minutes, number}} both name the placeholder "minutes".
-const placeholder = /\{\{\s*([^,}\s]+)[^}]*\}\}/g
+// {{minutes}}, {{minutes, number}} and the unescaped {{- minutes}} all name "minutes".
+const placeholder = /\{\{-?\s*([^,}\s]+)[^}]*\}\}/g
 
-function flatten(messages: Messages, prefix = ''): Map<string, string> {
-  const entries = new Map<string, string>()
-  for (const [key, value] of Object.entries(messages)) {
+// Throws on anything i18next would misread, so a bad file fails the test loudly.
+function flatten(messages: Messages, prefix = '', entries = new Map<string, string>()) {
+  for (const [key, value] of Object.entries(messages) as [string, unknown][]) {
     const path = prefix + key
+    if (entries.has(path)) throw new Error(`${path}: the key appears twice (a dotted key?)`)
     if (typeof value === 'string') entries.set(path, value)
-    else for (const entry of flatten(value, `${path}.`)) entries.set(...entry)
+    else if (typeof value === 'object' && value !== null) {
+      flatten(value as Messages, `${path}.`, entries)
+    } else throw new Error(`${path}: expected a string or an object, found ${String(value)}`)
   }
   return entries
 }
@@ -76,7 +79,9 @@ export function compareLocales(base: Messages, other: Messages, language: string
       differences.extra.push(key)
       continue
     }
-    for (const form of requiredForms(group.forms, language)) {
+    // A plural in en stays a plural: a flat '{{count}} notas' would read "1 notas".
+    const forms = new Set([...baseGroup.forms, ...group.forms])
+    for (const form of requiredForms(forms, language)) {
       if (!group.forms.has(form)) differences.pluralForms.push(key + form)
     }
     const expected = placeholdersOf(baseGroup.values)

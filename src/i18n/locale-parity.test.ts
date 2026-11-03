@@ -41,6 +41,27 @@ describe('compareLocales', () => {
     expect(compareLocales(en, es, 'es').pluralForms).toEqual(['notes_many'])
   })
 
+  it('@TAN-13 reports a plural that became a single string', () => {
+    const en = { notes_one: '{{count}} note', notes_other: '{{count}} notes' }
+    expect(compareLocales(en, { notes: '{{count}} notas' }, 'es').pluralForms).toEqual([
+      'notes_many',
+      'notes_one',
+      'notes_other',
+    ])
+  })
+
+  it('@TAN-13 fails on a dotted key that collides with a nested one', () => {
+    const messages = { nav: { history: 'History' }, 'nav.history': 'History' }
+    expect(() => compareLocales(messages, messages, 'en')).toThrow(
+      'nav.history: the key appears twice',
+    )
+  })
+
+  it('@TAN-13 fails on a value that is not a string or an object', () => {
+    const messages = JSON.parse('{ "nav": null }') as Messages
+    expect(() => compareLocales(messages, messages, 'en')).toThrow('nav: expected a string')
+  })
+
   it('@TAN-13 accepts an optional zero form', () => {
     const en = { notes_one: '{{count}} note', notes_other: '{{count}} notes' }
     const withZero = { ...en, notes_zero: 'No notes' }
@@ -67,6 +88,12 @@ describe('compareLocales', () => {
     expect(compareLocales(en, { left: 'Quedan {{mins}} min' }, 'es').placeholders).toEqual([
       'left: expected {{minutes}}, found {{mins}}',
     ])
+  })
+
+  it('@TAN-13 reads the name of an unescaped placeholder', () => {
+    expect(
+      compareLocales({ hi: 'Hi {{- name}}' }, { hi: 'Hola {{- user}}' }, 'es').placeholders,
+    ).toEqual(['hi: expected {{name}}, found {{user}}'])
   })
 })
 
