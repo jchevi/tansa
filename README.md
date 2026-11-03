@@ -19,7 +19,7 @@ All data stays in your browser (IndexedDB). There is no backend.
 | `npm run dev`          | Start the dev server at http://localhost:5173 |
 | `npm run build`        | Typecheck and build for production to `dist/` |
 | `npm run preview`      | Serve the production build locally            |
-| `npm run lint`         | Run ESLint                                    |
+| `npm run lint`         | Run ESLint and Stylelint                      |
 | `npm run format`       | Format code with Prettier                     |
 | `npm run format:check` | Check formatting without changing files       |
 | `npm run typecheck`    | Run the TypeScript compiler without emitting  |
@@ -35,7 +35,7 @@ All data stays in your browser (IndexedDB). There is no backend.
 | `src/features/` | UI grouped by feature (charter, session, debrief, ...)  |
 | `src/data/`     | IndexedDB access; the only place that touches storage   |
 | `src/i18n/`     | Language files; no UI text lives in components          |
-| `src/theme/`    | Color tokens; no hard-coded colors in components        |
+| `src/theme/`    | Color tokens, fonts, base styles and contrast checks    |
 | `src/main.tsx`  | App entry point                                         |
 | `src/App.tsx`   | Root component                                          |
 
@@ -45,7 +45,7 @@ Components never call IndexedDB directly: they go through `src/data`. This keeps
 
 - Unit tests (Vitest) live next to the code as `src/**/*.test.ts`.
 - End-to-end tests (Playwright) live in `e2e/` and run against the production build in Chromium. The first run needs the browser: `npx playwright install chromium`.
-- Every test title starts with its Jira key, e.g. `@TAN-17 home screen and navigation`. ESLint enforces this for end-to-end tests. Run one ticket's tests with `npx playwright test --grep @TAN-17`.
+- Every test title starts with its Jira key, e.g. `@TAN-17 home screen and navigation`. ESLint enforces this for unit and end-to-end tests. Run one ticket's tests with `npx playwright test --grep @TAN-17`.
 - Prefer role and label locators (`getByRole`, `getByLabel`) over CSS selectors or test ids.
 
 ## Test data

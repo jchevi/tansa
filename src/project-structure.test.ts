@@ -17,6 +17,12 @@ describe('project structure', () => {
     expect(readFileSync(readmePath, 'utf8')).toContain(`src/${folder}`)
   })
 
+  it('@TAN-31 README says lint also runs Stylelint', () => {
+    const readme = readFileSync(fromSrc('../README.md'), 'utf8')
+    const lintRow = readme.split(/\r?\n/).find((line) => line.startsWith('| `npm run lint`'))
+    expect(lintRow).toContain('Stylelint')
+  })
+
   it('@TAN-10 README states the test data rule', () => {
     const readme = readFileSync(fromSrc('../README.md'), 'utf8')
     expect(readme).toContain('## Test data')
