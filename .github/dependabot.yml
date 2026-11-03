@@ -1,0 +1,7 @@
+# Opens PRs to update the SHA-pinned actions in .github/workflows [TAN-31].
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
