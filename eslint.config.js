@@ -1,4 +1,5 @@
 import js from '@eslint/js'
+import vitest from '@vitest/eslint-plugin'
 import { defineConfig, globalIgnores } from 'eslint/config'
 import prettier from 'eslint-config-prettier'
 import playwright from 'eslint-plugin-playwright'
@@ -34,6 +35,22 @@ export default defineConfig([
         'error',
         {
           mustMatch: {
+            test: ['^@TAN-\\d+ ', 'Test titles must start with the Jira key, e.g. "@TAN-17 …"'],
+          },
+        },
+      ],
+    },
+  },
+  {
+    // Vitest titles start with the Jira key too; describe() only groups, so it is free [TAN-31].
+    files: ['src/**/*.test.{ts,tsx}'],
+    plugins: { vitest },
+    rules: {
+      'vitest/valid-title': [
+        'error',
+        {
+          mustMatch: {
+            it: ['^@TAN-\\d+ ', 'Test titles must start with the Jira key, e.g. "@TAN-17 …"'],
             test: ['^@TAN-\\d+ ', 'Test titles must start with the Jira key, e.g. "@TAN-17 …"'],
           },
         },
