@@ -178,6 +178,10 @@ describe('eslint forbids colors in TS/TSX', () => {
       'export const a = (ctx: CanvasRenderingContext2D, color: string) => { ctx.fillStyle = color }',
     ],
     [
+      'a resolved token in a canvas template',
+      'export const a = (ctx: CanvasRenderingContext2D, ink: string) => { ctx.fillStyle = `${ink}` }',
+    ],
+    [
       'color-mix() over tokens in a multi-part shadow',
       "export const a = '0 0 0 2px color-mix(in srgb, var(--color-bug) 20%, transparent), inset 0 0 0 1px var(--color-ink)'",
     ],

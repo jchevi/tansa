@@ -112,11 +112,12 @@ export default defineConfig([
             'Color properties take a var(--color-*) token or a keyword (transparent, currentColor, inherit, none).',
         })),
         ...[
-          `${canvasStyle} > :matches(Literal, TemplateLiteral)`,
-          `${canvasStyle} > ConditionalExpression > :matches(Literal, TemplateLiteral)`,
+          `${canvasStyle} > :matches(Literal, TemplateLiteral[expressions.length=0])`,
+          `${canvasStyle} > ConditionalExpression > :matches(Literal, TemplateLiteral[expressions.length=0])`,
         ].map((selector) => ({
           selector,
-          // Any string, tokens included: canvas never resolves var() [TAN-29].
+          // Any fixed string, tokens included: canvas never resolves var(). A template
+          // with ${} carries a value resolved at runtime, so it is allowed [TAN-29].
           message:
             'Canvas cannot read var(): resolve the token with getComputedStyle and assign that value.',
         })),
