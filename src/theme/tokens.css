@@ -1,0 +1,37 @@
+/*
+ * Design tokens. The only file allowed to hold color values (TAN-12): everything else uses
+ * var(--color-*). Theme: Kisaragi light. Every value is #RRGGBB so the contrast test can
+ * measure it; roles and checked pairs live in token-roles.ts.
+ */
+:root {
+  /* Surfaces */
+  --color-bg: #f3efe6;
+  --color-surface: #ebe6da;
+  --color-card: #fbf9f4;
+
+  /* Text and lines */
+  --color-ink: #262d3a;
+  --color-muted: #5e6470;
+  --color-hair: #ddd6c8;
+
+  /* Actions. on-* is the text that sits on that color. */
+  --color-primary: #262d3a;
+  --color-on-primary: #f3efe6;
+  --color-accent: #e9673a;
+  --color-on-accent: #1b2029;
+  /* Small orange text (eyebrows, field labels, links). */
+  --color-accent-strong: #b54b27;
+
+  /* Findings. Never used as text; *-bg is the color at 20% over card, as opaque hex. */
+  --color-note: #7c876d;
+  --color-bug: #e9673a;
+  --color-issue: #dfa23c;
+  --color-note-bg: #e2e2d9;
+  --color-bug-bg: #f7dccf;
+  --color-issue-bg: #f5e8cf;
+
+  /* Fonts */
+  --font-display: 'Zen Maru Gothic', system-ui, sans-serif;
+  --font-ui: 'Zen Kaku Gothic New', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}

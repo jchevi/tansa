@@ -1,0 +1,49 @@
+/* Global base styles. Colors come only from tokens.css. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-ui);
+  line-height: 1.5;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 900;
+}
+
+code,
+kbd,
+samp,
+time {
+  font-family: var(--font-mono);
+}
+
+/* Keyboard focus is always visible; primary is checked at 3:1 on every surface. */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Page frame only: each screen sets its own column width. */
+main {
+  min-height: 100vh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

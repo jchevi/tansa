@@ -1,0 +1,23 @@
+{
+  "rules": {
+    "color-no-hex": true,
+    "color-named": "never",
+    "function-disallowed-list": ["/^(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|device-cmyk)$/i"],
+    "declaration-property-value-disallowed-list": {
+      "/^(color|background|border|outline|fill|stroke|box-shadow|text-shadow|text-decoration|caret-color|accent-color|column-rule|scrollbar-color)/": [
+        "/(?<![\\w-])(AccentColor|AccentColorText|ActiveText|ButtonBorder|ButtonFace|ButtonText|Canvas|CanvasText|Field|FieldText|GrayText|Highlight|HighlightText|LinkText|Mark|MarkText|SelectedItem|SelectedItemText|VisitedText)(?![\\w-])/i"
+      ]
+    }
+  },
+  "overrides": [
+    {
+      "files": ["src/theme/tokens.css"],
+      "rules": {
+        "color-no-hex": null,
+        "color-named": null,
+        "function-disallowed-list": null,
+        "declaration-property-value-disallowed-list": null
+      }
+    }
+  ]
+}
