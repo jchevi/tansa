@@ -1,11 +1,10 @@
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import { renderToString } from 'react-dom/server'
 import { I18nextProvider, useTranslation } from 'react-i18next'
-import ts from 'typescript'
 import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { createI18n } from './config'
-import appI18n from './index'
+
+// No import of ./index here: it registers a global instance that useTranslation() would
+// fall back to. The app instance is tested in app-instance.test.ts.
 
 // Not in en.json. Cast to never so the typed t() accepts it: these tests are about runtime.
 const missingKey = 'no.such.key' as never
@@ -40,13 +39,15 @@ describe('missing keys', () => {
   })
 
   it('@TAN-13 a component shows the key name for a missing key', () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     const html = renderToString(
       <I18nextProvider i18n={createI18n({ dev: true })}>
         <MissingKeyProbe />
       </I18nextProvider>,
     )
     expect(html).toBe('<p>no.such.key</p>')
+    // Our warning, not react-i18next's "no instance" one: the provider's instance was used.
+    expect(warn.mock.calls).toEqual([['[i18n] Missing key "no.such.key" (en)']])
   })
 })
 
@@ -63,26 +64,8 @@ describe('typed keys', () => {
   })
 })
 
-describe('app instance', () => {
+describe('resources', () => {
   it('@TAN-13 a key returns its English string', () => {
     expect(createI18n({ dev: false }).t('app.name')).toBe('tansa')
-  })
-
-  // Importing ./index registers the app instance with react-i18next for the whole test
-  // file. Component tests pass their own instance through I18nextProvider instead.
-  it('@TAN-13 the app instance is initialized with English', () => {
-    expect(appI18n.isInitialized).toBe(true)
-    expect(appI18n.language).toBe('en')
-    expect(appI18n.t('app.name')).toBe('tansa')
-  })
-
-  it('@TAN-13 main.tsx loads the i18n setup', () => {
-    // Parsed, not searched as text, so a commented-out import does not count.
-    const path = fileURLToPath(new URL('../main.tsx', import.meta.url))
-    const source = ts.createSourceFile(path, readFileSync(path, 'utf8'), ts.ScriptTarget.Latest)
-    const imports = source.statements
-      .filter(ts.isImportDeclaration)
-      .map((statement) => (statement.moduleSpecifier as ts.StringLiteral).text)
-    expect(imports).toContain('./i18n')
   })
 })
