@@ -55,7 +55,7 @@ It is built by one person (a senior QA engineer, intermediate programmer) as a p
 - PR merged with the key in branch and title.
 - Preview deployed.
 
-TAN-9 to TAN-11 bootstrapped the tooling. From TAN-11 on, every ticket meets the full Definition of Done: `main` only accepts a PR whose `checks` and `e2e` jobs pass.
+TAN-9 to TAN-11 bootstrapped the tooling. From TAN-12 on, every ticket meets the full Definition of Done: `main` only accepts a PR whose `checks` and `e2e` jobs pass.
 
 ## Hard rules
 - **Local-first:** session content (charters, notes, bugs, screenshots) never leaves the browser. No network calls with session data. Analytics and error tracking (v1.0) must never include session content.

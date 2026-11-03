@@ -22,6 +22,53 @@ test('@TAN-12 the page uses the background and ink tokens', async ({ page }) => 
   await expect(page.locator('body')).toHaveCSS('color', computedRgb('--color-ink'))
 })
 
+// No screen has a focusable element yet, so the test adds one to the real page and its CSS.
+test('@TAN-31 keyboard focus shows a primary-colored ring', async ({ page }) => {
+  await page.goto('/')
+  await page.evaluate(() => {
+    const button = document.createElement('button')
+    button.textContent = 'Probe'
+    document.querySelector('main')?.append(button)
+  })
+
+  await page.keyboard.press('Tab')
+
+  const button = page.getByRole('button', { name: 'Probe' })
+  await expect(button).toBeFocused()
+  await expect(button).toHaveCSS('outline-style', 'solid')
+  await expect(button).toHaveCSS('outline-width', '2px')
+  await expect(button).toHaveCSS('outline-color', computedRgb('--color-primary'))
+})
+
+// Measured with and without the setting, so the reset is proven to come from the media query.
+// Order: transition duration, transition delay, animation duration, animation delay (s).
+const motionCases = [
+  { reducedMotion: 'no-preference', expected: [1, 2, 1, 2] },
+  { reducedMotion: 'reduce', expected: [0.00001, 0, 0.00001, 0] },
+] as const
+for (const { reducedMotion, expected } of motionCases) {
+  test(`@TAN-31 motion with reduced motion set to ${reducedMotion}`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion })
+    await page.goto('/')
+
+    const timing = await page.evaluate(() => {
+      const probe = document.createElement('div')
+      probe.style.transition = 'opacity 1s 2s'
+      probe.style.animation = 'none 1s 2s'
+      document.body.append(probe)
+      const style = getComputedStyle(probe)
+      return [
+        style.transitionDuration,
+        style.transitionDelay,
+        style.animationDuration,
+        style.animationDelay,
+      ].map((value) => parseFloat(value))
+    })
+
+    expect(timing).toEqual(expected)
+  })
+}
+
 // Every weight imported in fonts.ts, so a new or dropped import can't go unchecked.
 const families: Record<string, string> = {
   'zen-maru-gothic': 'Zen Maru Gothic',
