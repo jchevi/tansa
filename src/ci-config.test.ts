@@ -68,8 +68,14 @@ describe('CI and preview config', () => {
     }
   })
 
+  // A shared group on main would still cancel a pending run when a third one queues, so
+  // each push to main gets a group of its own commit [TAN-31].
   it('@TAN-31 only pull request runs are cancelled by a newer push', () => {
-    expect(ci).toContain("cancel-in-progress: ${{ github.event_name == 'pull_request' }}")
+    const lines = ci.split(/\r?\n/)
+    expect(lines).toContain(
+      "  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}",
+    )
+    expect(lines).toContain("  cancel-in-progress: ${{ github.event_name == 'pull_request' }}")
   })
 
   it('@TAN-31 Dependabot keeps the pinned actions up to date', () => {
