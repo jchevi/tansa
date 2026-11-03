@@ -22,14 +22,27 @@ test('@TAN-12 the page uses the background and ink tokens', async ({ page }) => 
   await expect(page.locator('body')).toHaveCSS('color', computedRgb('--color-ink'))
 })
 
-test('@TAN-12 the three font families are bundled and load', async ({ page }) => {
+// Every weight imported in fonts.ts, so a new or dropped import can't go unchecked.
+const families: Record<string, string> = {
+  'zen-maru-gothic': 'Zen Maru Gothic',
+  'zen-kaku-gothic-new': 'Zen Kaku Gothic New',
+  'ibm-plex-mono': 'IBM Plex Mono',
+}
+const faces = [
+  ...readFileSync(new URL('../src/theme/fonts.ts', import.meta.url), 'utf8').matchAll(
+    /^import '@fontsource\/([\w-]+)\/latin-(\d+)\.css'/gm,
+  ),
+].map(([, slug = '', weight = '']) => {
+  const family = families[slug]
+  if (!family) throw new Error(`Add the family name of @fontsource/${slug} to theme.spec.ts`)
+  return { family, weight }
+})
+
+test('@TAN-12 every imported font weight is bundled and loads', async ({ page }) => {
   await page.goto('/')
 
-  const faces = [
-    { family: 'Zen Maru Gothic', weight: '900' },
-    { family: 'Zen Kaku Gothic New', weight: '400' },
-    { family: 'IBM Plex Mono', weight: '400' },
-  ]
+  // An empty list would pass vacuously.
+  expect(faces).toHaveLength(7)
   for (const face of faces) {
     // Not document.fonts.check(): it returns true for a family that was never registered.
     const loaded = await page.evaluate(async ({ family, weight }) => {
