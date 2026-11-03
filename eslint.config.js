@@ -42,23 +42,31 @@ export default defineConfig([
   },
   {
     // Colors live only in src/theme/tokens.css; code uses var(--color-*) [TAN-12].
-    // Hex is matched anywhere in a string (e.g. '1px solid #fff'), so a hex-shaped word
-    // like '#add' is a false positive: disable the line with a reason if that happens.
+    // Hex is matched anywhere in a string (e.g. '1px solid #fff', fill='#fff'), so a
+    // hex-shaped word like '#add' is a false positive: disable the line with a reason.
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['**/*.test.{ts,tsx}'],
     rules: {
       'no-restricted-syntax': [
         'error',
-        ...['Literal[value=/', 'TemplateElement[value.raw=/'].flatMap((node) => [
+        ...['Literal[value=/', 'TemplateElement[value.raw=/', 'JSXText[value=/'].flatMap((node) => [
           {
-            selector: `${node}(^|[\\s,(:])#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})\\b/i]`,
+            selector: `${node}(^|[\\s,(:'"=/])#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})\\b/i]`,
             message: 'No hard-coded hex colors: use a var(--color-*) token from src/theme.',
           },
           {
-            selector: `${node}\\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\\(/i]`,
+            selector: `${node}\\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|device-cmyk)\\(/i]`,
             message: 'No hard-coded color functions: use a var(--color-*) token from src/theme.',
           },
         ]),
+        {
+          // Named and system colors (white, Canvas) on a color property. An allow-list,
+          // because the names are too many to list. Shorthands like border are not covered.
+          selector:
+            'Property[key.name=/^(color|fill|stroke|background|[a-zA-Z]+Color)$/][value.value=/^(?!(var|color-mix|url)\\(|(transparent|currentcolor|inherit|initial|unset|revert|none)$)/i]',
+          message:
+            'Color properties take a var(--color-*) token or a keyword (transparent, currentColor, inherit, none).',
+        },
       ],
     },
   },
