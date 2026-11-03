@@ -4,6 +4,8 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo",
     "types": ["vite/client", "node"]
   },
-  "include": ["src/**/*.test.ts", "src/**/*.test.tsx"],
+  // Declaration files too: src/i18n/i18next.d.ts types t() keys and nothing imports it.
+  // Any future src/**/*.d.ts also reaches the tests, which is harmless [TAN-13].
+  "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/*.d.ts"],
   "exclude": []
 }
