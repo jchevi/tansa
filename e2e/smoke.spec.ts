@@ -12,5 +12,8 @@ test('@TAN-10 app loads and shows the app shell', async ({ page }) => {
   await expect(page).toHaveTitle('TANSA')
   // Attached, not visible: the shell has no content until Home exists, so it has no size.
   await expect(page.getByRole('main')).toBeAttached()
+  // goto() waits for the load event; fonts are the only work still in flight after it, so a
+  // font that fails to load is reported before the errors are read [TAN-31].
+  await page.evaluate(() => document.fonts.ready)
   expect(errors).toEqual([])
 })
