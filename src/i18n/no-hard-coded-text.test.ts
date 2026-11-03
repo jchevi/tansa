@@ -42,6 +42,7 @@ describe('ESLint forbids hard-coded UI text', () => {
     ['the right side of ||', "export const A = () => <p>{name || 'Untitled'}</p>"],
     ['the right side of ??', "export const A = () => <p>{name ?? 'Untitled'}</p>"],
     ['aria-label', 'export const A = () => <button aria-label="Close" />'],
+    ['aria-braillelabel', 'export const A = () => <button aria-braillelabel="Close" />'],
     ['aria-description', 'export const A = () => <div aria-description="Timer" />'],
     ['aria-roledescription', 'export const A = () => <div aria-roledescription="Slide" />'],
     ['aria-placeholder', 'export const A = () => <div aria-placeholder="Search" />'],

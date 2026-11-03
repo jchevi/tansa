@@ -34,7 +34,7 @@ const textValues = [
   `LogicalExpression > TemplateLiteral[expressions.length=0] > TemplateElement[value.raw=${letter}]`,
 ]
 const textAttribute =
-  'JSXAttribute[name.name=/^(aria-(label|description|roledescription|placeholder|valuetext)|title|alt|placeholder|label)$/]'
+  'JSXAttribute[name.name=/^(aria-(label|braillelabel|description|roledescription|placeholder|valuetext)|title|alt|placeholder|label)$/]'
 const dialogCall =
   'CallExpression:matches([callee.name=/^(alert|confirm|prompt)$/], [callee.object.name="window"][callee.property.name=/^(alert|confirm|prompt)$/])'
 const textSelectors = [
