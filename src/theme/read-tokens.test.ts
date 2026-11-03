@@ -28,6 +28,12 @@ describe('parseColorTokens', () => {
     expect(() => parseColorTokens(`:root { --color-x: ${value}; }`)).toThrow('--color-x')
   })
 
+  it('@TAN-12 reads the last declaration of a block even without a semicolon', () => {
+    expect([
+      ...parseColorTokens(':root { --color-a: #000000; --color-b: #C9532B }').keys(),
+    ]).toEqual(['--color-a', '--color-b'])
+  })
+
   it('@TAN-12 fails loudly when a token is defined twice', () => {
     expect(() => parseColorTokens(':root { --color-x: #000000; --color-x: #FFFFFF; }')).toThrow(
       '--color-x',
