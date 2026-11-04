@@ -16,11 +16,11 @@ The reviews do not replace the owner: the owner still approves the plan and the 
 - **Ticket text**: the Jira ticket with its acceptance criteria. Reviewers cannot read Jira, so paste the text into each prompt.
 - **Plan file**: `.claude/plans/TAN-<n>.md` (git-ignored). It holds the files to touch, how each acceptance criterion is tested, the order of work and the risks.
 - **Diff file** (code phase): `.claude/plans/TAN-<n>.diff` (git-ignored). Reviewers cannot run commands, so they read this file.
-- **Log**: `.claude/reviews/TAN-<n>.jsonl`. The `SubagentStop` hook (TAN-34) appends one line per reviewer verdict. Never write it yourself. Until TAN-34's hooks are registered, keep the round count in the conversation and report it.
+- **Log**: `.claude/reviews/TAN-<n>.jsonl`. The `SubagentStop` hook (TAN-34) appends one line per reviewer verdict. Never write it yourself: Edit and Write are denied there. The gates in `.claude/hooks/` read it to allow code edits, PRs and reviewer launches.
 
 ## Round
 
-A round is each distinct plan hash or HEAD SHA within a phase. The plan hash is the sha256 of the plan file with CRLF turned into LF; the code phase uses the HEAD commit. Relaunching with no change is the same round (for example, after a reviewer failed to finish): it does not add to the count.
+A round is each distinct plan hash or HEAD SHA within a phase. The plan hash is the sha256 of the plan file with CRLF turned into LF; the code phase uses the HEAD commit. Relaunching with no change is the same round (for example, after a reviewer failed to finish): it does not add to the count. Returning to an earlier hash or SHA after a different one starts a new round.
 
 ## Plan phase
 
@@ -31,7 +31,7 @@ A round is each distinct plan hash or HEAD SHA within a phase. The plan hash is 
 
 ## Code phase
 
-1. Commit everything. `git status --porcelain --untracked-files=no` must print nothing, so the reviewers see exactly HEAD.
+1. Commit everything. `git status --porcelain` must print nothing, untracked files included, so the reviewers see exactly HEAD.
 2. Write the diff: `git diff main...HEAD > .claude/plans/TAN-<n>.diff`.
 3. Launch `code-correctness-reviewer` and `code-rules-reviewer` in parallel. Each prompt holds: the ticket key, the ticket text, the diff path, the plan path, the round number and, from round 2, the previous findings with how each one was resolved.
 4. Cross-check the findings, fix them in new commits (a new HEAD SHA is a new round), and start the next round from step 1.

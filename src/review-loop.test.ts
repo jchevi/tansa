@@ -110,6 +110,27 @@ describe('review-loop skill', () => {
   it('@TAN-33 plan and diff files are git-ignored', () => {
     expect(lines(read('.gitignore'))).toContain('.claude/plans/')
   })
+
+  it('@TAN-34 the review log is git-ignored', () => {
+    expect(lines(read('.gitignore'))).toContain('.claude/reviews/')
+  })
+
+  // Files never added are not in the review diff, so they must count as uncommitted, the
+  // same check gate-pr makes (TAN-33 code review minor).
+  it('@TAN-34 the code phase checks untracked files too', () => {
+    expect(skill()).toContain('`git status --porcelain` must print nothing')
+    expect(skill()).not.toContain('--untracked-files=no')
+  })
+
+  it('@TAN-34 the skill says the hooks write the log and that a return to an old ref is a new round', () => {
+    expect(skill()).toContain(
+      'The `SubagentStop` hook (TAN-34) appends one line per reviewer verdict',
+    )
+    expect(skill()).not.toContain("Until TAN-34's hooks are registered")
+    expect(skill()).toContain(
+      'Returning to an earlier hash or SHA after a different one starts a new round',
+    )
+  })
 })
 
 describe('workflow docs for the review loop', () => {
