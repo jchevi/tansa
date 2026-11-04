@@ -11,6 +11,7 @@ import {
   reviewers,
   roundNumber,
   run,
+  transcriptReport,
   verdictShape,
 } from './lib.ts'
 
@@ -22,7 +23,9 @@ run(() => {
   const phase = reviewers[agent]
   const message =
     typeof input.last_assistant_message === 'string' ? input.last_assistant_message : ''
-  const verdict = parseVerdict(message, phase)
+  // last_assistant_message first; when the reviewer handed its report back through a tool
+  // call, that field is empty and the report is read from its transcript.
+  const verdict = parseVerdict(message, phase) ?? parseVerdict(transcriptReport(input), phase)
 
   if (verdict === null) {
     // Asked once already: stop asking. With no log line the round does not count, so the

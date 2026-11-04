@@ -442,6 +442,50 @@ describe('record-verdict', { timeout }, () => {
     expect(readLogLines(dir).map((line) => line.round)).toEqual([1, 1, 1, 2])
   })
 
+  // In the desktop app a subagent ends by calling SubagentHandback with its report, so
+  // last_assistant_message is empty and the verdict is only in the agent's transcript.
+  const transcript = (dir: string, ...content: unknown[]) => {
+    const file = path.join(dir, 'agent-transcript.jsonl')
+    writeFile(
+      dir,
+      'agent-transcript.jsonl',
+      content
+        .map((block) =>
+          JSON.stringify({ type: 'assistant', message: { role: 'assistant', content: [block] } }),
+        )
+        .join('\n'),
+    )
+    return file
+  }
+  const handback = (message: string) => ({
+    type: 'tool_use',
+    name: 'SubagentHandback',
+    input: { message },
+  })
+
+  it('@TAN-34 a verdict handed back through SubagentHandback is read from the agent transcript', () => {
+    const dir = repo()
+    writeFile(dir, planFile, planText)
+    const file = transcript(
+      dir,
+      { type: 'text', text: 'Reading the plan.' },
+      { type: 'thinking', thinking: 'VERDICT phase=plan status=open blockers=9 majors=9 minors=9' },
+      handback(review('plan')),
+    )
+    const input = { ...stop(dir, 'plan-fidelity-reviewer', ''), agent_transcript_path: file }
+    expectAllowed(runHook('record-verdict', input))
+    expect(readLogLines(dir)).toMatchObject([{ status: 'clean', ref: hashOf(planText) }])
+  })
+
+  it('@TAN-34 a transcript without a verdict still blocks the reviewer', () => {
+    const dir = repo()
+    writeFile(dir, planFile, planText)
+    const file = transcript(dir, handback('Done, no verdict.'))
+    const input = { ...stop(dir, 'plan-fidelity-reviewer', ''), agent_transcript_path: file }
+    expectBlocked(runHook('record-verdict', input), 'VERDICT phase=plan status=<clean|open>')
+    expect(readLogLines(dir)).toEqual([])
+  })
+
   it('@TAN-34 a code verdict is recorded on the HEAD SHA', () => {
     const dir = repo()
     runHook('record-verdict', stop(dir, 'code-rules-reviewer', review('code')))

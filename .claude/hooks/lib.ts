@@ -4,6 +4,7 @@
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { appendFileSync, existsSync, mkdirSync, readFileSync, realpathSync } from 'node:fs'
+import { homedir } from 'node:os'
 import path from 'node:path'
 
 // Each reviewer and the phase it reviews; the agents live in .claude/agents [TAN-33].
@@ -248,6 +249,52 @@ export function parseVerdict(
   const minors = Number(match[5])
   if ((status === 'clean') !== (blockers === 0 && majors === 0)) return null
   return { status, blockers, majors, minors }
+}
+
+// The reviewer's final report as its transcript holds it. In the desktop app a subagent
+// ends by calling the SubagentHandback tool with its report, so last_assistant_message has
+// no text: the report is the last assistant text, or the last handback message, in
+// agent_transcript_path (found in the TAN-34 live run). Thinking blocks never count.
+export function transcriptReport(input: HookInput): string {
+  const file = input.agent_transcript_path
+  if (typeof file !== 'string' || file === '') return ''
+  const resolved = file.startsWith('~') ? path.join(homedir(), file.slice(1)) : file
+  if (!existsSync(resolved)) return ''
+  let report = ''
+  for (const line of readFileSync(resolved, 'utf8').split(/\r?\n/)) {
+    if (line.trim() === '') continue
+    let entry: unknown
+    try {
+      entry = JSON.parse(line)
+    } catch {
+      continue
+    }
+    const texts = assistantBlocks(entry).flatMap((block) => {
+      if (block.type === 'text' && typeof block.text === 'string') return [block.text]
+      const message = (block.input as Record<string, unknown> | undefined)?.message
+      if (
+        block.type === 'tool_use' &&
+        block.name === 'SubagentHandback' &&
+        typeof message === 'string'
+      ) {
+        return [message]
+      }
+      return []
+    })
+    if (texts.length > 0) report = texts.join('\n')
+  }
+  return report
+}
+
+function assistantBlocks(entry: unknown): Record<string, unknown>[] {
+  if (typeof entry !== 'object' || entry === null) return []
+  const message = (entry as { message?: unknown }).message
+  if (typeof message !== 'object' || message === null) return []
+  const { role, content } = message as { role?: unknown; content?: unknown }
+  if (role !== 'assistant' || !Array.isArray(content)) return []
+  return content.filter(
+    (block): block is Record<string, unknown> => typeof block === 'object' && block !== null,
+  )
 }
 
 // --- Paths and commands ---
