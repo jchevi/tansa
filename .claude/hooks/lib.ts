@@ -318,7 +318,10 @@ export function classifyPath(p: typeof path.posix, root: string, cwd: string, fi
 }
 
 const tokenPattern = /"[^"]*"|'[^']*'|\S+/g
-const unquote = (token: string) => token.replace(/^(["'])(.*)\1$/s, '$2')
+// A quoted token loses its quotes. A separator inside a shell string splits it before
+// tokens are read, leaving a stray quote (`merge"`), so leftover quotes go too.
+const unquote = (token: string) =>
+  token.replace(/^(["'])(.*)\1$/s, '$2').replace(/^["']|["']$/g, '')
 const basename = (token: string) => token.split(/[\\/]/).at(-1) ?? ''
 
 // Where one command ends and the next begins: newlines, ;, &&, ||, |, a background &

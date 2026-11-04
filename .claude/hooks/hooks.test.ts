@@ -333,6 +333,10 @@ describe('command matching', () => {
     "sh -c 'npm test && gh pr merge 12'",
     'pwsh -Command "gh pr create --fill"',
     'cmd /c gh pr merge 12',
+    // A separator inside a shell string leaves a stray quote on the last word (round 2).
+    'bash -c "cd x && gh pr merge"',
+    'pwsh -Command "npm test; gh pr create"',
+    "sh -c 'cd x && gh pr merge'",
   ])('@TAN-34 finds gh pr create or merge in %j', (command) => {
     expect(findsPrCommand(command)).toBe(true)
   })
