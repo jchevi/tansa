@@ -1,0 +1,9 @@
+{
+  // The review-loop hooks run with `node` directly (type stripping), so this project keeps
+  // nodenext, .ts imports and erasable syntax only from tsconfig.node.json [TAN-34].
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.hooks.tsbuildinfo"
+  },
+  "include": [".claude/hooks/**/*.ts"]
+}

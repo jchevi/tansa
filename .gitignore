@@ -30,3 +30,6 @@ blob-report
 
 # Review loop plans and diffs (TAN-33)
 .claude/plans/
+
+# Review loop verdict log, written by the record-verdict hook (TAN-34)
+.claude/reviews/
