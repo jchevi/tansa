@@ -66,6 +66,8 @@ describe('review loop agents', () => {
       expect(body).toContain(field)
     }
     expect(body).toContain('blocker / major / minor')
+    // The template alone is not a requirement: the instruction to end with it must be there.
+    expect(body).toContain('End with exactly one verdict line, and nothing after it')
     expect(body).toContain(verdictTemplate)
     expect(body).toContain(`phase=${reviewers[name]}`)
   })
