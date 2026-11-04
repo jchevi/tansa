@@ -27,3 +27,6 @@ dist-ssr
 test-results
 playwright-report
 blob-report
+
+# Review loop plans and diffs (TAN-33)
+.claude/plans/

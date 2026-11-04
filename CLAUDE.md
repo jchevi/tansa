@@ -21,11 +21,12 @@ It is built by one person (a senior QA engineer, intermediate programmer) as a p
 - `docs/spec.md`: MVP spec (requirements R1–R15, data model). Source of truth for behaviour.
 - `docs/decisions.md`: decision log with reasons.
 - Backlog: Jira, space TAN (https://jchevi.atlassian.net). Each ticket has Gherkin acceptance criteria.
+- `.claude/skills/review-loop`: the plan and code review procedure; `.claude/agents`: its four read-only reviewers.
 - `src/features/*` UI by feature · `src/data` IndexedDB access · `src/i18n` strings · `src/theme` color tokens.
 
 ## How to work
 1. One Jira ticket at a time. Start by reading the ticket and the related part of `docs/spec.md`.
-2. Plan before coding: list the files you will touch and how each acceptance criterion will be tested. Wait for approval on anything non-trivial.
+2. Plan before coding: write `.claude/plans/TAN-<n>.md` with the files you will touch and how each acceptance criterion will be tested, run `/review-loop plan` until it is clean, then present it. Wait for approval on anything non-trivial.
 3. If the ticket is ambiguous or conflicts with the spec or a decision, **stop and ask**. Do not resolve it silently.
 4. Keep scope small: anything not in the ticket goes into a note for a new ticket, not into the code.
 5. Write the test from the acceptance criteria first (Playwright for stories, Vitest or another automated check for tasks), see it fail, then write the code.
@@ -40,8 +41,8 @@ It is built by one person (a senior QA engineer, intermediate programmer) as a p
 
 ## Ticket lifecycle
 1. Move the ticket to **In Progress** (WIP limit 1) and branch from an up-to-date `main`: `TAN-<n>-short-slug`.
-2. Commit with Conventional Commits and the key; open the PR (key in the title, criteria in the body).
-3. Stories: when CI is green and the preview is deployed, move the ticket to **QA** and run the exploratory session on the preview. Bugs found send it back to In Progress.
+2. Commit with Conventional Commits and the key; run `/review-loop code` until it is clean; open the PR (key in the title, criteria and the review line in the body).
+3. Stories: when CI is green and the preview is deployed, move the ticket to **QA** and run the exploratory session on the preview. Bugs found send it back to In Progress; their fixes go through `/review-loop code` again.
 4. Merge with a merge commit (the only method the repo allows), once the owner approves.
 5. Delete the branch. GitHub deletes the remote branch on merge; delete the local one with `git branch -d`.
 6. Move the ticket to **Done**.
