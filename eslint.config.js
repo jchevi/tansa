@@ -83,7 +83,7 @@ export default defineConfig([
   },
   {
     // Vitest titles start with the Jira key too; describe() only groups, so it is free [TAN-31].
-    files: ['src/**/*.test.{ts,tsx}'],
+    files: ['src/**/*.test.{ts,tsx}', '.claude/hooks/**/*.test.ts'],
     plugins: { vitest },
     rules: {
       'vitest/valid-title': [
@@ -158,6 +158,11 @@ export default defineConfig([
         })),
       ],
     },
+  },
+  {
+    // The review-loop hooks run in Node, not the browser [TAN-34].
+    files: ['.claude/hooks/**/*.ts'],
+    languageOptions: { globals: globals.node },
   },
   {
     files: ['**/*.js'],

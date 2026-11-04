@@ -5,6 +5,7 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   plugins: [react()],
   test: {
-    include: ['src/**/*.test.{ts,tsx}'],
+    // The review-loop hooks keep their tests next to them [TAN-34].
+    include: ['src/**/*.test.{ts,tsx}', '.claude/hooks/**/*.test.ts'],
   },
 })
