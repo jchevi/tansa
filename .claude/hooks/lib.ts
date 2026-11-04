@@ -318,17 +318,41 @@ export function classifyPath(p: typeof path.posix, root: string, cwd: string, fi
 }
 
 const tokenPattern = /"[^"]*"|'[^']*'|\S+/g
-const unquote = (token: string) => token.replace(/^(["'])(.*)\1$/, '$2')
+const unquote = (token: string) => token.replace(/^(["'])(.*)\1$/s, '$2')
+const basename = (token: string) => token.split(/[\\/]/).at(-1) ?? ''
 
-// gh pr create or gh pr merge anywhere in a command, chained with newlines, ;, &&, || or |.
-// Textual: aliases, gh api and commands built at runtime are known gaps (docs/decisions.md).
+// Where one command ends and the next begins: newlines, ;, &&, ||, |, a background &
+// (also PowerShell's call operator), grouping, and $( ) or backtick substitution.
+const separators = /\r?\n|&&|\|\||[;&|(){}`]/
+// Words that may come before the program: shell keywords and wrappers that run the rest.
+const prefixes = new Set(['if', 'then', 'else', 'elif', 'do', 'while', 'until', 'time', '!'])
+const wrappers = new Set(['sudo', 'env', 'command', 'exec', 'nohup', 'builtin'])
+const isAssignment = (token: string) => /^[A-Za-z_]\w*=/.test(token)
+// A shell running a string: bash -c "…", pwsh -Command "…", cmd /c …
+const shells = /^(bash|sh|zsh|dash|pwsh|powershell|cmd)(\.exe)?$/i
+const shellFlags = /^(-c|-lc|-command|\/c|\/k)$/i
+
+// gh pr create or gh pr merge anywhere in a command, including the shell forms above.
+// Textual: aliases, gh api, scripts that call gh and commands built at runtime are known
+// gaps (docs/decisions.md). A shell string is matched as a command of its own.
 export function findsPrCommand(command: string): boolean {
-  return command.split(/\r?\n|;|&&|\|\||\|/).some((segment) => {
-    const tokens = (segment.trim().replace(/^&\s*/, '').match(tokenPattern) ?? []).map(unquote)
-    const program = tokens[0]?.split(/[\\/]/).at(-1) ?? ''
+  return command.split(separators).some((segment) => {
+    const tokens = (segment.match(tokenPattern) ?? []).map(unquote)
+    let start = 0
+    while (start < tokens.length) {
+      const token = tokens[start] ?? ''
+      const skip = prefixes.has(token) || wrappers.has(token) || isAssignment(token)
+      if (!skip) break
+      start += 1
+    }
+    const program = basename(tokens[start] ?? '')
+    if (shells.test(program)) {
+      const flag = tokens.findIndex((token, index) => index > start && shellFlags.test(token))
+      return flag !== -1 && findsPrCommand(tokens.slice(flag + 1).join(' '))
+    }
     if (!/^gh(\.exe)?$/i.test(program)) return false
     const words: string[] = []
-    for (let i = 1; i < tokens.length; i += 1) {
+    for (let i = start + 1; i < tokens.length; i += 1) {
       const token = tokens[i] ?? ''
       if (!token.startsWith('-')) words.push(token)
       // -R and --repo take the next token as their value.

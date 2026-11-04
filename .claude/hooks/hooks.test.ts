@@ -318,16 +318,37 @@ describe('command matching', () => {
     '& "C:\\Program Files\\GitHub CLI\\gh.exe" pr create',
     'gh -R owner/repo pr merge 12',
     'gh --repo=owner/repo pr create',
+    // Shell forms found in code review round 1: grouping, substitution, assignments,
+    // background jobs, keywords, wrappers and a shell running a string.
+    '(gh pr merge 12)',
+    '$(gh pr merge 12)',
+    '`gh pr merge 12`',
+    '{ gh pr merge 12; }',
+    'GH_REPO=o/r gh pr merge 12',
+    'sleep 1 & gh pr merge 12',
+    'if true; then gh pr merge 12; fi',
+    'sudo gh pr merge 12',
+    'env GH_REPO=o/r gh pr merge 12',
+    'bash -c "gh pr merge 12"',
+    "sh -c 'npm test && gh pr merge 12'",
+    'pwsh -Command "gh pr create --fill"',
+    'cmd /c gh pr merge 12',
   ])('@TAN-34 finds gh pr create or merge in %j', (command) => {
     expect(findsPrCommand(command)).toBe(true)
   })
 
-  it.each(['gh pr list', 'echo gh pr merge', 'gh prs', 'ghx pr merge', 'gh pr view 12', 'ls'])(
-    '@TAN-34 does not match %j',
-    (command) => {
-      expect(findsPrCommand(command)).toBe(false)
-    },
-  )
+  it.each([
+    'gh pr list',
+    'echo gh pr merge',
+    'gh prs',
+    'ghx pr merge',
+    'gh pr view 12',
+    'ls',
+    'git commit -m "docs: say gh pr merge is gated"',
+    'bash -c "gh pr list"',
+  ])('@TAN-34 does not match %j', (command) => {
+    expect(findsPrCommand(command)).toBe(false)
+  })
 })
 
 describe('gate-rounds', { timeout }, () => {
