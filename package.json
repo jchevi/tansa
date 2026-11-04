@@ -21,8 +21,10 @@
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "@fontsource/zen-kaku-gothic-new": "^5.3.1",
     "@fontsource/zen-maru-gothic": "^5.3.1",
+    "i18next": "^26.7.1",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "react-i18next": "^17.1.12"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

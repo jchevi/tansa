@@ -1,0 +1,24 @@
+{
+  "app": {
+    "name": "tansa"
+  },
+  "nav": {
+    "home": "Home",
+    "session": "Session",
+    "history": "History",
+    "newSession": "New session",
+    "settings": "Settings",
+    "theme": "Switch theme"
+  },
+  "sbtm": {
+    "charter": "Charter",
+    "explore": "Explore",
+    "with": "With",
+    "toDiscover": "To discover",
+    "note": "Note",
+    "bug": "Bug",
+    "issue": "Issue",
+    "proof": "PROOF",
+    "tbs": "TBS"
+  }
+}
