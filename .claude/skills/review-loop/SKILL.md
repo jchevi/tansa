@@ -47,7 +47,7 @@ A round is each distinct plan hash or HEAD SHA within a phase. The plan hash is 
 ## Stop rule
 
 - A round is clean when neither reviewer reports an open blocker or major.
-- Minors are not fixed in this PR. List them for the owner as notes for new tickets; once the owner creates the tickets, use their keys in the review line.
+- Minors are not fixed in this PR. List them for the owner as notes for new tickets; once the owner creates the tickets, use their keys in the review line. Pass them to the next round as deferred: deferred minors are not reopened and do not count toward escalation.
 - After 3 consecutive open rounds in a phase, stop and ask the owner what to do. A clean round resets the count, so a QA bounce-back or a plan change after a clean round starts again from zero.
 - Escalate to the owner, without waiting for round 3:
   - A finding reopened twice.

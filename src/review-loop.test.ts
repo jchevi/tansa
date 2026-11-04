@@ -70,6 +70,9 @@ describe('review loop agents', () => {
     expect(body).toContain('End with exactly one verdict line, and nothing after it')
     expect(body).toContain(verdictTemplate)
     expect(body).toContain(`phase=${reviewers[name]}`)
+    // Without `deferred`, a minor kept as a note reads as reopened and would escalate
+    // falsely after two rounds (found in this ticket's own code review).
+    expect(body).toContain('`<id>: resolved | reopened | deferred (reason)`')
   })
 })
 
@@ -93,6 +96,7 @@ describe('review-loop skill', () => {
     ['owner reset', '`owner-reset`'],
     ['log kept', 'Never delete the log'],
     ['escalation', 'A finding reopened twice'],
+    ['deferred', 'deferred minors are not reopened and do not count toward escalation'],
     ['PR line', 'Plan review: <n> rounds, <n> open. Code review: <n> rounds, <n> open.'],
     ['verdict', verdictTemplate],
   ])('@TAN-33 the skill states the %s rule', (_rule, text) => {

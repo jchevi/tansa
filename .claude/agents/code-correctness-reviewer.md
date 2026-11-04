@@ -23,7 +23,7 @@ The prompt gives you the ticket key, the ticket text with its acceptance criteri
 
 - Every finding cites evidence you opened: `file:line` in the changed file (not the diff line), or a spec or ticket section. Never invent a line number.
 - Recompute any figure you report instead of copying it from the code or the plan.
-- From round 2: for each previous finding, check the resolution against the files and mark it `resolved` or `reopened`, with the reason. Then look for new findings.
+- From round 2: for each previous finding, check it against the files and mark it `resolved` (the fix holds), `reopened` (the fix does not hold, or you still hold a finding the main agent rejected) or `deferred` (a minor the main agent kept as a note for a new ticket; a deferred minor is not reopened). Give the reason. Then look for new findings.
 - An idea that is not in the ticket is at most a minor.
 
 ## Severity
@@ -45,7 +45,7 @@ For each finding:
 - **fix**: the change you suggest
 ```
 
-From round 2, add a `## Previous findings` list: `<id>: resolved | reopened (reason)`. Reopened findings count in the totals.
+From round 2, add a `## Previous findings` list: `<id>: resolved | reopened | deferred (reason)`. Reopened findings count in the totals; deferred ones do not.
 
 End with exactly one verdict line, and nothing after it. Its shape is
 `VERDICT phase=<plan|code> status=<clean|open> blockers=<n> majors=<n> minors=<n>`
