@@ -122,6 +122,12 @@ describe('review-loop skill', () => {
     expect(skill()).not.toContain('--untracked-files=no')
   })
 
+  it('@TAN-36 the skill says how to record a raise and that resumes and stalled rounds count', () => {
+    expect(skill()).toContain('record it with `record-override.ts`')
+    expect(skill()).toContain('Resuming a reviewer with `SendMessage` counts as a launch')
+    expect(skill()).toContain('The missing reviewer of the latest round can still be launched')
+  })
+
   it('@TAN-34 the skill says the hooks write the log and that a return to an old ref is a new round', () => {
     expect(skill()).toContain(
       'The `SubagentStop` hook (TAN-34) appends one line per reviewer verdict',

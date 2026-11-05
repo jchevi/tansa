@@ -16,7 +16,7 @@ The reviews do not replace the owner: the owner still approves the plan and the 
 - **Ticket text**: the Jira ticket with its acceptance criteria. Reviewers cannot read Jira, so paste the text into each prompt.
 - **Plan file**: `.claude/plans/TAN-<n>.md` (git-ignored). It holds the files to touch, how each acceptance criterion is tested, the order of work and the risks.
 - **Diff file** (code phase): `.claude/plans/TAN-<n>.diff` (git-ignored). Reviewers cannot run commands, so they read this file.
-- **Log**: `.claude/reviews/TAN-<n>.jsonl`. The `SubagentStop` hook (TAN-34) appends one line per reviewer verdict. Never write it yourself: Edit and Write are denied there. The gates in `.claude/hooks/` read it to allow code edits, PRs and reviewer launches.
+- **Log**: `.claude/reviews/TAN-<n>.jsonl`. The `SubagentStop` hook (TAN-34) appends one line per reviewer verdict, and `record-override.ts` (TAN-36) appends a severity raise. Never write it yourself: Edit and Write are denied there. The gates in `.claude/hooks/` read it to allow code edits, PRs and reviewer launches.
 
 ## Round
 
@@ -42,13 +42,20 @@ A round is each distinct plan hash or HEAD SHA within a phase. The plan hash is 
 - A finding both reviewers report is high confidence: apply it.
 - A finding only one reviewer reports: verify it yourself against the evidence before applying it. Open the cited file and line. Never copy a figure or conclusion without recomputing it.
 - A finding you reject: note it with the reason, and pass the reason to the next round's reviewers.
-- Severity is the reviewer's opening bid. If you change it, say why.
+- Severity is the reviewer's opening bid. If you change it, say why. When you raise a finding to blocker or major, record it with `record-override.ts`, so the log shows its round as open:
+
+  ```
+  node .claude/hooks/record-override.ts --phase code --finding CR-6 --severity major --reason "…"
+  ```
+
+  A lowered or rejected finding is not logged: keep it in the conversation and in the next round's prompt.
 
 ## Stop rule
 
 - A round is clean when neither reviewer reports an open blocker or major.
 - Minors are not fixed in this PR. List them for the owner as notes for new tickets; once the owner creates the tickets, use their keys in the review line. Pass them to the next round as deferred: deferred minors are not reopened and do not count toward escalation.
 - After 3 consecutive open rounds in a phase, stop and ask the owner what to do. A clean round resets the count, so a QA bounce-back or a plan change after a clean round starts again from zero.
+- Resuming a reviewer with `SendMessage` counts as a launch. The missing reviewer of the latest round can still be launched while its ref is current, so a round that stalled can be finished.
 - Escalate to the owner, without waiting for round 3:
   - A finding reopened twice.
   - A rejected finding that a reviewer reopens.
