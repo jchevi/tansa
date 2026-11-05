@@ -1,12 +1,13 @@
 // SubagentStop on the four reviewers: parses the verdict line and appends it to the log
-// (.claude/reviews/TAN-<n>.jsonl), the only writer of that file [TAN-34].
+// (.claude/reviews/TAN-<n>.jsonl) [TAN-34]. record-override.ts is the only other writer
+// [TAN-36].
 import {
+  agentIdOf,
   appendLog,
   context,
-  headSha,
+  currentRef,
   isReviewer,
   parseVerdict,
-  planHash,
   readInput,
   reviewers,
   roundNumber,
@@ -47,8 +48,10 @@ run(() => {
     process.stderr.write(`The branch has no TAN-<n> key; ${agent}'s verdict is not logged.\n`)
     return
   }
-  const ref = phase === 'plan' ? planHash(root, key) : headSha(root)
+  const ref = currentRef(root, key, phase)
   if (ref === null) throw new Error(`No plan at .claude/plans/${key}.md to record the verdict on`)
+  // The reviewer's id, so gate-rounds can recognise a SendMessage resume [TAN-36].
+  const agentId = agentIdOf(input)
   appendLog(root, key, {
     type: 'verdict',
     ticket: key,
@@ -58,5 +61,6 @@ run(() => {
     ref,
     ...verdict,
     time: new Date().toISOString(),
+    ...(agentId === null ? {} : { agent_id: agentId }),
   })
 })

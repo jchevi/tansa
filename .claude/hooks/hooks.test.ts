@@ -2,13 +2,14 @@ import { createHash } from 'node:crypto'
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { classifyPath, findsPrCommand } from './lib.ts'
+import { classifyPath, findsPrCommand, parseLog } from './lib.ts'
 import {
   buildTemplate,
   copyRepo,
   git,
   removeScratch,
   runHook,
+  runScript,
   writeFile,
   type HookResult,
 } from './test-repo.ts'
@@ -451,6 +452,8 @@ describe('record-verdict', { timeout }, () => {
         majors: 1,
         minors: 1,
         time: expect.stringMatching(/^\d{4}-\d\d-\d\dT/) as unknown,
+        // The stop input's agent_id is stored since TAN-36.
+        agent_id: 'a1',
       },
     ])
   })
@@ -610,6 +613,472 @@ describe('fails closed', { timeout }, () => {
   })
 })
 
+// --- TAN-36: overrides, finishing a stalled round, SendMessage ---
+
+const fixture = (name: string) =>
+  JSON.parse(readFileSync(path.join(import.meta.dirname, 'fixtures', name), 'utf8')) as Record<
+    string,
+    unknown
+  >
+
+function verdictWith(
+  reviewer: Reviewer,
+  ref: string,
+  status: 'clean' | 'open',
+  agentId: string,
+): string {
+  return JSON.stringify({
+    ...(JSON.parse(verdict(reviewer, ref, status)) as object),
+    agent_id: agentId,
+  })
+}
+
+function overrideLine(phase: 'plan' | 'code', ref: string, extra: Record<string, unknown> = {}) {
+  return JSON.stringify({
+    type: 'override',
+    ticket: 'TAN-20',
+    phase,
+    round: 1,
+    ref,
+    finding: 'CR-9',
+    severity: 'major',
+    reason: 'A verified bypass outside the reviewer lens.',
+    time: '2026-11-05T12:00:00Z',
+    ...extra,
+  })
+}
+
+const override = (dir: string, phase: string, ...extra: string[]) =>
+  runScript(
+    'record-override',
+    [
+      '--phase',
+      phase,
+      '--finding',
+      'CR-9',
+      '--severity',
+      'major',
+      '--reason',
+      'Verified.',
+      ...extra,
+    ],
+    dir,
+  )
+
+const head = (dir: string) => git(dir, 'rev-parse', 'HEAD')
+const merge = (dir: string) => shell(dir, 'gh pr merge 12')
+
+describe('overrides', { timeout }, () => {
+  it('@TAN-36 an override raising a finding to major on HEAD makes gh pr merge denied', () => {
+    const dir = repo()
+    reviewedHead(dir)
+    expectAllowed(runHook('gate-pr', merge(dir)))
+    expect(override(dir, 'code').status).toBe(0)
+    const result = runHook('gate-pr', merge(dir))
+    expectDenied(result, 'both code reviewers clean on HEAD')
+    expectDenied(result, 'Run /review-loop code')
+  })
+
+  it('@TAN-36 an override on the plan hash makes a src/ write denied', () => {
+    const dir = repo()
+    planned(dir)
+    expectAllowed(runHook('gate-edits', edit(dir, 'src/a.ts')))
+    expect(override(dir, 'plan').status).toBe(0)
+    const result = runHook('gate-edits', edit(dir, 'src/a.ts'))
+    expectDenied(result, 'need both plan reviewers clean')
+    expectDenied(result, 'Run /review-loop plan')
+  })
+
+  it('@TAN-36 an override opens only its own round', () => {
+    const dir = repo()
+    const a = head(dir)
+    writeLog(
+      dir,
+      ...round(codeReviewers, a, 'clean'),
+      overrideLine('code', a),
+      ...round(codeReviewers, 'ref-b', 'open'),
+      ...round(codeReviewers, a, 'clean'),
+    )
+    expectAllowed(runHook('gate-pr', merge(dir)))
+    writeLog(
+      dir,
+      ...round(codeReviewers, a, 'clean'),
+      ...round(codeReviewers, 'ref-b', 'open'),
+      ...round(codeReviewers, a, 'clean'),
+      overrideLine('code', a),
+    )
+    expectDenied(runHook('gate-pr', merge(dir)), 'Run /review-loop code')
+  })
+
+  it('@TAN-36 a clean relaunch on the same ref does not clear an override', () => {
+    const dir = repo()
+    const a = head(dir)
+    writeLog(
+      dir,
+      ...round(codeReviewers, a, 'clean'),
+      overrideLine('code', a),
+      ...round(codeReviewers, a, 'clean'),
+    )
+    expectDenied(runHook('gate-pr', merge(dir)), 'Run /review-loop code')
+  })
+
+  it('@TAN-36 an owner-reset restarts the count but does not clear an override', () => {
+    const dir = repo()
+    const a = head(dir)
+    writeLog(
+      dir,
+      ...round(codeReviewers, 'ref-0', 'open'),
+      ...round(codeReviewers, 'ref-1', 'open'),
+      ...round(codeReviewers, a, 'clean'),
+      overrideLine('code', a),
+    )
+    expectDenied(runHook('gate-rounds', launch(dir, 'code-rules-reviewer')), 'ask the owner')
+    appendFileSync(path.join(dir, logFile), `${reset('code')}\n`)
+    expectAllowed(runHook('gate-rounds', launch(dir, 'code-rules-reviewer')))
+    expectDenied(runHook('gate-pr', merge(dir)), 'Run /review-loop code')
+  })
+
+  it('@TAN-36 a plan override does not open the code round', () => {
+    const dir = repo()
+    writeFile(dir, planFile, planText)
+    // The plan override comes last, so a code round that read it would end open.
+    writeLog(
+      dir,
+      ...round(planReviewers, hashOf(planText), 'clean'),
+      ...round(codeReviewers, head(dir), 'clean'),
+      overrideLine('plan', hashOf(planText)),
+    )
+    expectAllowed(runHook('gate-pr', merge(dir)))
+  })
+
+  it.each([
+    ['a minor severity', { severity: 'minor' }],
+    ['no reason', { reason: undefined }],
+    ['an empty finding', { finding: '' }],
+  ])('@TAN-36 an override line with %s makes every gate exit 2', (_kind, extra) => {
+    const dir = repo()
+    writeLog(
+      dir,
+      ...round(codeReviewers, head(dir), 'clean'),
+      overrideLine('code', head(dir), extra),
+    )
+    expect(runHook('gate-pr', shell(dir, 'ls')).status).toBe(2)
+    expect(runHook('gate-edits', edit(dir, 'docs/a.md')).status).toBe(2)
+    expect(runHook('gate-rounds', launch(dir, 'Explore')).status).toBe(2)
+  })
+
+  it('@TAN-36 TAN-34 log lines without agent_id and an owner-reset with a note still parse', () => {
+    const tan34 =
+      '{"type":"verdict","ticket":"TAN-34","phase":"plan","reviewer":"plan-testability-reviewer","round":1,"ref":"9e2c5506da35252099a05cfd1fb31f6b3bf8c92e116b6c77e7ad9f7d3fa8b526","status":"clean","blockers":0,"majors":0,"minors":0,"time":"2026-11-04T22:50:00.074Z"}'
+    const ownerReset =
+      '{"type":"owner-reset","phase":"plan","time":"2026-11-05T17:58:55Z","note":"added by Claude at the owner\'s request in chat"}'
+    expect(parseLog(`${tan34}\n${ownerReset}\n`)).toHaveLength(2)
+  })
+})
+
+describe('record-override', { timeout }, () => {
+  it('@TAN-36 record-override appends an override with the round ref and number', () => {
+    const dir = repo()
+    reviewedHead(dir, ...round(codeReviewers, 'ref-old', 'open'))
+    expect(override(dir, 'code').status).toBe(0)
+    expect(readLogLines(dir).at(-1)).toEqual({
+      type: 'override',
+      ticket: 'TAN-20',
+      phase: 'code',
+      round: 2,
+      ref: head(dir),
+      finding: 'CR-9',
+      severity: 'major',
+      reason: 'Verified.',
+      time: expect.stringMatching(/^\d{4}-\d\d-\d\dT/) as unknown,
+    })
+  })
+
+  const reviewed = (dir: string) => {
+    reviewedHead(dir)
+  }
+  const code = ['--phase', 'code', '--finding', 'X', '--severity', 'major', '--reason', 'r']
+  // Each refusal names its own reason, so a case cannot pass because another check fired.
+  it.each([
+    [
+      'a minor severity',
+      reviewed,
+      ['--phase', 'code', '--finding', 'X', '--severity', 'minor', '--reason', 'r'],
+      '--severity must be blocker or major',
+    ],
+    [
+      'an invalid phase',
+      reviewed,
+      ['--phase', 'qa', '--finding', 'X', '--severity', 'major', '--reason', 'r'],
+      '--phase must be plan or code',
+    ],
+    ['an unknown --ref flag', reviewed, [...code, '--ref=abc'], "Unknown option '--ref'"],
+    [
+      'no finding',
+      reviewed,
+      ['--phase', 'code', '--severity', 'major', '--reason', 'r'],
+      '--finding is required',
+    ],
+    [
+      'an empty reason',
+      reviewed,
+      ['--phase', 'code', '--finding', 'X', '--severity', 'major', '--reason', ' '],
+      '--reason is required',
+    ],
+    [
+      'no key on the branch',
+      (dir: string) => {
+        reviewedHead(dir)
+        git(dir, 'checkout', '-q', 'main')
+      },
+      code,
+      'no TAN-<n> key',
+    ],
+    ['no round yet', () => undefined, code, 'no code round'],
+    [
+      'a latest round on another ref',
+      (dir: string) => {
+        reviewedHead(dir)
+        commit(dir, 'docs/a.md', 'later\n')
+      },
+      code,
+      'reviewed on another HEAD',
+    ],
+    [
+      'a plan phase with no plan file',
+      (dir: string) => {
+        writeLog(dir, ...round(planReviewers, hashOf(planText), 'clean'))
+      },
+      ['--phase', 'plan', '--finding', 'X', '--severity', 'major', '--reason', 'r'],
+      'no plan at',
+    ],
+    [
+      'a broken log',
+      (dir: string) => {
+        reviewedHead(dir)
+        appendFileSync(path.join(dir, logFile), '{not json\n')
+      },
+      code,
+      'is not JSON',
+    ],
+  ] as const)('@TAN-36 record-override refuses %s', (_kind, setup, args, message) => {
+    const dir = repo()
+    setup(dir)
+    const file = path.join(dir, logFile)
+    const before = existsSync(file) ? readFileSync(file, 'utf8') : null
+    const result = runScript('record-override', [...args], dir)
+    expect(result.status, result.stderr).toBe(1)
+    expect(result.stderr).toContain(message)
+    expect(existsSync(file) ? readFileSync(file, 'utf8') : null).toBe(before)
+  })
+})
+
+describe('finishing a stalled round', { timeout }, () => {
+  const twoOpen = [
+    ...round(codeReviewers, 'ref-0', 'open'),
+    ...round(codeReviewers, 'ref-1', 'open'),
+  ]
+
+  it('@TAN-36 the missing reviewer can finish a third open round on the current ref', () => {
+    const dir = repo()
+    writeLog(dir, ...twoOpen, verdict('code-correctness-reviewer', head(dir), 'open'))
+    expectAllowed(runHook('gate-rounds', launch(dir, 'code-rules-reviewer')))
+  })
+
+  it('@TAN-36 the reviewer that already has a verdict cannot relaunch a third open round', () => {
+    const dir = repo()
+    writeLog(dir, ...twoOpen, verdict('code-correctness-reviewer', head(dir), 'open'))
+    expectDenied(runHook('gate-rounds', launch(dir, 'code-correctness-reviewer')), 'ask the owner')
+  })
+
+  it('@TAN-36 a launch after three open rounds is denied once the ref changes', () => {
+    const dir = repo()
+    writeLog(dir, ...twoOpen, verdict('code-correctness-reviewer', 'ref-old', 'open'))
+    expectDenied(runHook('gate-rounds', launch(dir, 'code-rules-reviewer')), 'ask the owner')
+  })
+
+  it('@TAN-36 the missing reviewer can finish a round that has an override', () => {
+    const dir = repo()
+    writeLog(
+      dir,
+      ...twoOpen,
+      verdict('code-correctness-reviewer', head(dir), 'clean'),
+      overrideLine('code', head(dir)),
+    )
+    expectAllowed(runHook('gate-rounds', launch(dir, 'code-rules-reviewer')))
+  })
+
+  it('@TAN-36 open plan rounds with no plan file are counted without failing', () => {
+    const dir = repo()
+    writeLog(dir, ...round(planReviewers, 'p-0', 'open'), ...round(planReviewers, 'p-1', 'open'))
+    expectAllowed(runHook('gate-rounds', launch(dir, 'plan-fidelity-reviewer')))
+    appendFileSync(path.join(dir, logFile), `${verdict('plan-fidelity-reviewer', 'p-2', 'open')}\n`)
+    expectDenied(runHook('gate-rounds', launch(dir, 'plan-testability-reviewer')), 'ask the owner')
+  })
+})
+
+describe('SendMessage to a reviewer', { timeout }, () => {
+  const id = 'a1b2c3d4e5f607182'
+  const other = 'b2c3d4e5f60718293'
+  const send = (dir: string, to: string) => {
+    const input = fixture('send-message.json')
+    return {
+      ...input,
+      cwd: dir,
+      tool_input: { ...(input.tool_input as object), to, recipient: to },
+    }
+  }
+  const threeOpen = (dir: string) => {
+    writeLog(
+      dir,
+      verdictWith('code-correctness-reviewer', 'ref-0', 'open', id),
+      verdictWith('code-rules-reviewer', 'ref-0', 'open', other),
+      ...round(codeReviewers, 'ref-1', 'open'),
+      ...round(codeReviewers, head(dir), 'open'),
+    )
+  }
+
+  it.each([id, `${id} [c5dfd5]`])(
+    '@TAN-36 resuming a reviewer with SendMessage after three open rounds is denied (%s)',
+    (to) => {
+      const dir = repo()
+      threeOpen(dir)
+      expectDenied(runHook('gate-rounds', send(dir, to)), 'ask the owner')
+    },
+  )
+
+  it('@TAN-36 SendMessage to another agent is allowed', () => {
+    const dir = repo()
+    threeOpen(dir)
+    expectAllowed(runHook('gate-rounds', send(dir, 'c3d4e5f6071829304')))
+  })
+
+  it('@TAN-36 resuming the missing reviewer of a stalled round is allowed', () => {
+    const dir = repo()
+    writeLog(
+      dir,
+      verdictWith('code-correctness-reviewer', 'ref-0', 'open', id),
+      verdictWith('code-rules-reviewer', 'ref-0', 'open', other),
+      ...round(codeReviewers, 'ref-1', 'open'),
+      verdictWith('code-correctness-reviewer', head(dir), 'open', id),
+    )
+    expectAllowed(runHook('gate-rounds', send(dir, other)))
+    expectDenied(runHook('gate-rounds', send(dir, id)), 'ask the owner')
+  })
+
+  it('@TAN-36 SendMessage exits 2 on a broken log', () => {
+    const dir = repo()
+    writeLog(dir, '{not json')
+    expect(runHook('gate-rounds', send(dir, other)).status).toBe(2)
+  })
+})
+
+describe('record-verdict on a resumed reviewer', { timeout }, () => {
+  type Entry = { role: 'user' | 'assistant'; content: unknown }
+  const user = (content: unknown): Entry => ({ role: 'user', content })
+  const assistant = (...content: unknown[]): Entry => ({ role: 'assistant', content })
+  const toolResult = user([{ type: 'tool_result', tool_use_id: 't1', content: 'ok' }])
+  const handbackBlock = (message: string) => ({
+    type: 'tool_use',
+    name: 'SubagentHandback',
+    input: { message },
+  })
+  const thinking = assistant({ type: 'thinking', thinking: 'Checking the plan.' })
+  const read = assistant({ type: 'tool_use', name: 'Read', input: { file_path: 'x' } })
+
+  function transcriptFile(dir: string, agentId: string, entries: Entry[]): string {
+    const relative = `transcripts/agent-${agentId}.jsonl`
+    writeFile(
+      dir,
+      relative,
+      entries
+        .map(({ role, content }) => JSON.stringify({ type: role, message: { role, content } }))
+        .join('\n'),
+    )
+    return path.join(dir, relative)
+  }
+  const resumedStop = (dir: string, file: string, active = false) => ({
+    ...fixture('subagent-stop-resumed.json'),
+    cwd: dir,
+    agent_transcript_path: file,
+    stop_hook_active: active,
+  })
+  const id = 'a1b2c3d4e5f607182'
+
+  it('@TAN-36 record-verdict stores the agent_id', () => {
+    const dir = repo()
+    writeFile(dir, planFile, planText)
+    const file = transcriptFile(dir, id, [
+      user('Review the plan.'),
+      assistant(handbackBlock(review('plan'))),
+      toolResult,
+    ])
+    expectAllowed(runHook('record-verdict', resumedStop(dir, file)))
+    expect(readLogLines(dir)).toMatchObject([{ status: 'clean', agent_id: id }])
+  })
+
+  it('@TAN-36 record-verdict takes the agent_id from the transcript name when it is missing', () => {
+    const dir = repo()
+    writeFile(dir, planFile, planText)
+    const file = transcriptFile(dir, 'f0e1d2c3b4a596870', [
+      user('Review the plan.'),
+      assistant(handbackBlock(review('plan'))),
+      toolResult,
+    ])
+    const input: Record<string, unknown> = resumedStop(dir, file)
+    delete input.agent_id
+    expectAllowed(runHook('record-verdict', input))
+    expect(readLogLines(dir)).toMatchObject([{ agent_id: 'f0e1d2c3b4a596870' }])
+  })
+
+  // The only shape where an earlier verdict would come back: after the resume there is no
+  // text and no handback at all.
+  const staleRun = [
+    user('Review the plan.'),
+    assistant(handbackBlock(review('plan'))),
+    toolResult,
+    user('Please re-review the plan.'),
+    thinking,
+    read,
+    toolResult,
+  ]
+
+  it('@TAN-36 a resumed reviewer with no new verdict line is not logged from its earlier report', () => {
+    const dir = repo()
+    writeFile(dir, planFile, planText)
+    const file = transcriptFile(dir, id, staleRun)
+    expectBlocked(
+      runHook('record-verdict', resumedStop(dir, file)),
+      'VERDICT phase=plan status=<clean|open>',
+    )
+    expect(readLogLines(dir)).toEqual([])
+    expectAllowed(runHook('record-verdict', resumedStop(dir, file, true)))
+    expect(readLogLines(dir)).toEqual([])
+  })
+
+  // The real shape: the run ends with the handback, then its own tool_result.
+  it.each([
+    ['plain string', 'Please re-review the plan.'],
+    ['text blocks', [{ type: 'text', text: 'Please re-review the plan.' }]],
+  ])('@TAN-36 a resumed reviewer new verdict is logged (resume as %s)', (_kind, resume) => {
+    const dir = repo()
+    writeFile(dir, planFile, planText)
+    const file = transcriptFile(dir, id, [
+      user('Review the plan.'),
+      assistant(handbackBlock(review('plan', 'open', 1))),
+      toolResult,
+      user(resume),
+      read,
+      toolResult,
+      assistant(handbackBlock(review('plan'))),
+      toolResult,
+      thinking,
+    ])
+    expectAllowed(runHook('record-verdict', resumedStop(dir, file)))
+    expect(readLogLines(dir)).toMatchObject([{ status: 'clean', agent_id: id }])
+  })
+})
+
 describe('settings.json', () => {
   const settingsPath = path.resolve(import.meta.dirname, '..', 'settings.json')
   type Hook = { type: string; command: string; args: string[]; onFailure?: string }
@@ -620,7 +1089,8 @@ describe('settings.json', () => {
     ['SubagentStop', Object.keys(phaseOf).join('|'), 'record-verdict'],
     ['PreToolUse', 'Edit|Write|MultiEdit|NotebookEdit', 'gate-edits'],
     ['PreToolUse', 'Bash|PowerShell', 'gate-pr'],
-    ['PreToolUse', 'Agent|Task', 'gate-rounds'],
+    // SendMessage since TAN-36: a resumed reviewer counts as a launch.
+    ['PreToolUse', 'Agent|Task|SendMessage', 'gate-rounds'],
   ])(
     '@TAN-34 settings.json registers %s %s with %s and onFailure block',
     (event, matcher, hook) => {

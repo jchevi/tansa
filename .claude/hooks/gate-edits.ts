@@ -25,7 +25,7 @@ run(() => {
   if (kind === 'free') return
   if (kind === 'log') {
     deny(
-      'The review log is written only by the record-verdict hook. The owner adds owner-reset lines by hand.',
+      'The review log is written only by the record-verdict hook and by record-override.ts (run it with Bash to record a severity raise). The owner adds owner-reset lines by hand.',
     )
     return
   }
