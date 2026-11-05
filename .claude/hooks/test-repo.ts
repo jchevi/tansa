@@ -71,3 +71,13 @@ export function runHook(name: string, input: unknown): HookResult {
   })
   return { status: result.status, stdout: result.stdout, stderr: result.stderr }
 }
+
+// A script the main agent runs with Bash (not a hook): arguments, no stdin [TAN-36].
+export function runScript(name: string, args: string[], cwd: string): HookResult {
+  const result = spawnSync(process.execPath, [path.join(hooksDir, `${name}.ts`), ...args], {
+    cwd,
+    env,
+    encoding: 'utf8',
+  })
+  return { status: result.status, stdout: result.stdout, stderr: result.stderr }
+}

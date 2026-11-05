@@ -109,12 +109,29 @@ export type Verdict = {
   majors: number
   minors: number
   time: string
+  // The reviewer's id, so a SendMessage resume can be recognised (TAN-36). Optional: TAN-34
+  // logs have none.
+  agent_id?: string
 }
 export type OwnerReset = { type: 'owner-reset'; phase: Phase; time: string }
-export type LogLine = Verdict | OwnerReset
+// A finding the main agent raised to blocker or major after verifying it (TAN-36). Written
+// only by record-override.ts; it makes the round it is recorded in open.
+export type Override = {
+  type: 'override'
+  ticket: string
+  phase: Phase
+  round: number
+  ref: string
+  finding: string
+  severity: 'blocker' | 'major'
+  reason: string
+  time: string
+}
+export type LogLine = Verdict | OwnerReset | Override
 
 const isCount = (value: unknown): value is number =>
   typeof value === 'number' && Number.isInteger(value) && value >= 0
+const isText = (value: unknown): value is string => typeof value === 'string' && value.trim() !== ''
 
 function toLogLine(value: unknown): LogLine | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
@@ -122,15 +139,36 @@ function toLogLine(value: unknown): LogLine | null {
   const { type, phase, time } = line
   if ((phase !== 'plan' && phase !== 'code') || typeof time !== 'string') return null
   if (type === 'owner-reset') return { type, phase, time }
-  if (type !== 'verdict') return null
-  const { ticket, reviewer, round, ref, status, blockers, majors, minors } = line
+  const { ticket, round, ref } = line
   if (typeof ticket !== 'string' || !/^TAN-\d+$/.test(ticket)) return null
+  if (!isCount(round) || round < 1 || !isText(ref)) return null
+  if (type === 'override') {
+    const { finding, severity, reason } = line
+    if (!isText(finding) || !isText(reason)) return null
+    if (severity !== 'blocker' && severity !== 'major') return null
+    return { type, ticket, phase, round, ref, finding, severity, reason, time }
+  }
+  if (type !== 'verdict') return null
+  const { reviewer, status, blockers, majors, minors, agent_id: agentId } = line
   if (!isReviewer(reviewer) || reviewers[reviewer] !== phase) return null
-  if (!isCount(round) || round < 1 || typeof ref !== 'string' || ref === '') return null
   if (status !== 'clean' && status !== 'open') return null
   if (!isCount(blockers) || !isCount(majors) || !isCount(minors)) return null
   if ((status === 'clean') !== (blockers === 0 && majors === 0)) return null
-  return { type, ticket, phase, reviewer, round, ref, status, blockers, majors, minors, time }
+  if (agentId !== undefined && !isText(agentId)) return null
+  const verdict: Verdict = {
+    type,
+    ticket,
+    phase,
+    reviewer,
+    round,
+    ref,
+    status,
+    blockers,
+    majors,
+    minors,
+    time,
+  }
+  return agentId === undefined ? verdict : { ...verdict, agent_id: agentId }
 }
 
 // Any line that is not JSON or does not match the schema throws, so every gate exits 2.
@@ -180,25 +218,70 @@ export function context(input: HookInput): Context {
 // A round is a run of verdicts on one ref (plan hash or HEAD SHA) within a phase. A new
 // round starts whenever the ref changes, so A, B, A is three rounds. Each reviewer's
 // latest verdict in the round counts: any open makes it open; both reviewers clean make it
-// clean; anything else (one clean verdict so far) is incomplete.
-export type Round = { ref: string; status: 'clean' | 'open' | 'incomplete' }
+// clean; anything else (one clean verdict so far) is incomplete. An override marks the
+// round current at its place in the log as open, so it never reaches a later round on the
+// same ref (TAN-36).
+export type Round = {
+  ref: string
+  status: 'clean' | 'open' | 'incomplete'
+  reviewed: Reviewer[]
+}
 
 export function rounds(lines: LogLine[], phase: Phase): Round[] {
-  const groups: { ref: string; latest: Map<Reviewer, Verdict['status']> }[] = []
+  const groups: { ref: string; latest: Map<Reviewer, Verdict['status']>; overridden: boolean }[] =
+    []
   for (const line of lines) {
-    if (line.type !== 'verdict' || line.phase !== phase) continue
+    if (line.type === 'owner-reset' || line.phase !== phase) continue
     let group = groups.at(-1)
     if (group?.ref !== line.ref) {
-      group = { ref: line.ref, latest: new Map() }
+      group = { ref: line.ref, latest: new Map(), overridden: false }
       groups.push(group)
     }
-    group.latest.set(line.reviewer, line.status)
+    if (line.type === 'override') group.overridden = true
+    else group.latest.set(line.reviewer, line.status)
   }
-  return groups.map(({ ref, latest }) => {
-    if ([...latest.values()].includes('open')) return { ref, status: 'open' }
+  return groups.map(({ ref, latest, overridden }) => {
+    const reviewed = [...latest.keys()]
+    if (overridden || [...latest.values()].includes('open')) {
+      return { ref, status: 'open', reviewed }
+    }
     const clean = reviewersOf(phase).every((reviewer) => latest.get(reviewer) === 'clean')
-    return { ref, status: clean ? 'clean' : 'incomplete' }
+    return { ref, status: clean ? 'clean' : 'incomplete', reviewed }
   })
+}
+
+// The ref a new verdict would be recorded on: the plan hash or HEAD. null with no plan file.
+export function currentRef(root: string, key: string, phase: Phase): string | null {
+  return phase === 'plan' ? planHash(root, key) : headSha(root)
+}
+
+// The missing reviewer of the latest round may finish it while its ref is current, even at
+// the round limit: a relaunch with no change is the same round (TAN-36).
+export function canFinishRound(
+  lines: LogLine[],
+  phase: Phase,
+  reviewer: Reviewer,
+  ref: string | null,
+): boolean {
+  const last = rounds(lines, phase).at(-1)
+  return ref !== null && last?.ref === ref && !last.reviewed.includes(reviewer)
+}
+
+// The reviewer a SendMessage target names, from the agent_id record-verdict stored. The
+// target may carry a " [ref]" suffix, as SendMessage allows.
+export function reviewerFor(lines: LogLine[], to: unknown): Reviewer | null {
+  if (typeof to !== 'string') return null
+  const id = to.replace(/\s*\[[^\]]*\]\s*$/, '').trim()
+  const line = lines.findLast((entry) => entry.type === 'verdict' && entry.agent_id === id)
+  return line?.type === 'verdict' ? line.reviewer : null
+}
+
+// The reviewer's id: agent_id from the hook input, or the id in agent-<id>.jsonl.
+export function agentIdOf(input: HookInput): string | null {
+  if (isText(input.agent_id)) return input.agent_id
+  const file = input.agent_transcript_path
+  if (typeof file !== 'string') return null
+  return /agent-([^\\/]+)\.jsonl$/.exec(file)?.[1] ?? null
 }
 
 export const latestRound = (lines: LogLine[], phase: Phase) => rounds(lines, phase).at(-1)
@@ -255,6 +338,9 @@ export function parseVerdict(
 // ends by calling the SubagentHandback tool with its report, so last_assistant_message has
 // no text: the report is the last assistant text, or the last handback message, in
 // agent_transcript_path (found in the TAN-34 live run). Thinking blocks never count.
+// A reviewer resumed with SendMessage appends to the same file, so only what it wrote after
+// the last real user turn (text, not a tool_result) is its report: an earlier run's verdict
+// is never reused (TAN-36).
 export function transcriptReport(input: HookInput): string {
   const file = input.agent_transcript_path
   if (typeof file !== 'string' || file === '') return ''
@@ -267,6 +353,10 @@ export function transcriptReport(input: HookInput): string {
     try {
       entry = JSON.parse(line)
     } catch {
+      continue
+    }
+    if (isUserTurn(entry)) {
+      report = ''
       continue
     }
     const texts = assistantBlocks(entry).flatMap((block) => {
@@ -284,6 +374,20 @@ export function transcriptReport(input: HookInput): string {
     if (texts.length > 0) report = texts.join('\n')
   }
   return report
+}
+
+// A prompt or a SendMessage resume: a user message whose content is text. A tool_result is
+// also a user message, but not a turn.
+function isUserTurn(entry: unknown): boolean {
+  if (typeof entry !== 'object' || entry === null) return false
+  const message = (entry as { message?: unknown }).message
+  if (typeof message !== 'object' || message === null) return false
+  const { role, content } = message as { role?: unknown; content?: unknown }
+  if (role !== 'user') return false
+  if (typeof content === 'string') return true
+  if (!Array.isArray(content)) return false
+  const types = content.map((block) => (block as { type?: unknown } | null)?.type)
+  return types.includes('text') && !types.includes('tool_result')
 }
 
 function assistantBlocks(entry: unknown): Record<string, unknown>[] {
