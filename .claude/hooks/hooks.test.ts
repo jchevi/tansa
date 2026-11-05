@@ -1089,7 +1089,8 @@ describe('settings.json', () => {
     ['SubagentStop', Object.keys(phaseOf).join('|'), 'record-verdict'],
     ['PreToolUse', 'Edit|Write|MultiEdit|NotebookEdit', 'gate-edits'],
     ['PreToolUse', 'Bash|PowerShell', 'gate-pr'],
-    ['PreToolUse', 'Agent|Task', 'gate-rounds'],
+    // SendMessage since TAN-36: a resumed reviewer counts as a launch.
+    ['PreToolUse', 'Agent|Task|SendMessage', 'gate-rounds'],
   ])(
     '@TAN-34 settings.json registers %s %s with %s and onFailure block',
     (event, matcher, hook) => {
