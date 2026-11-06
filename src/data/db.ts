@@ -1,5 +1,6 @@
 import { openDB } from 'idb'
 import type { DBSchema, IDBPDatabase, IDBPTransaction, StoreNames } from 'idb'
+import { DB_NAME } from './names'
 import type { Note, Session, TimeSegment } from './types'
 
 export interface TansaSchema extends DBSchema {
@@ -47,7 +48,7 @@ export const migrations: readonly Migration[] = [
 
 export const DB_VERSION = migrations.length
 
-export const DB_NAME = 'tansa'
+export { DB_NAME }
 
 // Rolls back a readwrite transaction and rejects with the given error.
 // Aborting makes `tx.done` reject too; that rejection is expected here.
