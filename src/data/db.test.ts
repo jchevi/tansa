@@ -94,6 +94,27 @@ describe('migrations', () => {
     expect(await db.get('sessions', session.id)).toEqual({ ...session, build: 'migrated' })
   })
 
+  it('@TAN-14 a fresh install runs every migration in order', async () => {
+    const v2 = vi.fn<Migration>()
+    const db = track(await openDatabase([...migrations, v2]))
+
+    expect(db.version).toBe(2)
+    expect([...db.objectStoreNames].sort()).toEqual(['notes', 'sessions', 'timeSegments'])
+    expect(v2).toHaveBeenCalledTimes(1)
+  })
+
+  it('@TAN-14 an upgrade across several versions runs each step once, in order', async () => {
+    track(await openTansaDb()).close()
+    const calls: string[] = []
+    const v2: Migration = () => calls.push('v2')
+    const v3: Migration = () => calls.push('v3')
+
+    const db = track(await openDatabase([...migrations, v2, v3]))
+
+    expect(db.version).toBe(3)
+    expect(calls).toEqual(['v2', 'v3'])
+  })
+
   it('@TAN-14 an open connection closes when another tab opens a newer version', async () => {
     // Kept open on purpose: without a blocking handler it would block the
     // upgrade below forever.
