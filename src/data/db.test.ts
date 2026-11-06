@@ -100,7 +100,9 @@ describe('migrations', () => {
     track(await openTansaDb())
 
     const noop: Migration = () => undefined
-    const upgraded = track(await Promise.race([openDatabase([...migrations, noop]), timeout(2_000)]))
+    const upgraded = track(
+      await Promise.race([openDatabase([...migrations, noop]), timeout(2_000)]),
+    )
 
     expect(upgraded.version).toBe(2)
   })

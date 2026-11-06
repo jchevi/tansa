@@ -2,10 +2,7 @@ import { abortWith, sessionRange, type TansaDb } from './db'
 import { RecordNotFoundError } from './errors'
 import type { NewTimeSegment, TimeSegment, TimeSegmentPatch } from './types'
 
-export async function createTimeSegment(
-  db: TansaDb,
-  input: NewTimeSegment,
-): Promise<TimeSegment> {
+export async function createTimeSegment(db: TansaDb, input: NewTimeSegment): Promise<TimeSegment> {
   const segment: TimeSegment = {
     id: crypto.randomUUID(),
     sessionId: input.sessionId,
