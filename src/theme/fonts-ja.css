@@ -1,0 +1,25 @@
+/*
+ * The two kanji in Home's tagline, 探査 (TAN-17). Each sits in its own Fontsource chunk of
+ * Zen Kaku Gothic New 400 (探 in 112, 査 in 105). unicode-range limits each face to its
+ * glyph, so the browser downloads a chunk only when the glyph is on screen. If a Fontsource
+ * update moves a glyph, the e2e font test names the one missing.
+ */
+@font-face {
+  font-family: 'Zen Kaku Gothic New';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('@fontsource/zen-kaku-gothic-new/files/zen-kaku-gothic-new-112-400-normal.woff2')
+    format('woff2');
+  unicode-range: U+63A2;
+}
+
+@font-face {
+  font-family: 'Zen Kaku Gothic New';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('@fontsource/zen-kaku-gothic-new/files/zen-kaku-gothic-new-105-400-normal.woff2')
+    format('woff2');
+  unicode-range: U+67FB;
+}

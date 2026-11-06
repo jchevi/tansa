@@ -30,6 +30,9 @@
   --color-bug-bg: #f7dccf;
   --color-issue-bg: #f5e8cf;
 
+  /* Shadows. Built from color tokens with color-mix(), so a theme only changes the colors. */
+  --shadow-menu: 0 16px 40px color-mix(in srgb, var(--color-ink) 10%, transparent);
+
   /* Fonts */
   --font-display: 'Zen Maru Gothic', system-ui, sans-serif;
   --font-ui: 'Zen Kaku Gothic New', system-ui, sans-serif;

@@ -22,22 +22,20 @@ test('@TAN-12 the page uses the background and ink tokens', async ({ page }) => 
   await expect(page.locator('body')).toHaveCSS('color', computedRgb('--color-ink'))
 })
 
-// No screen has a focusable element yet, so the test adds one to the real page and its CSS.
+// The first Tab on Home lands on the menu's main link [TAN-17]. Home renders after the local
+// database opens, so wait for the menu before pressing Tab.
 test('@TAN-31 keyboard focus shows a primary-colored ring', async ({ page }) => {
   await page.goto('/')
-  await page.evaluate(() => {
-    const button = document.createElement('button')
-    button.textContent = 'Probe'
-    document.querySelector('main')?.append(button)
-  })
+  const menu = page.getByRole('navigation', { name: 'Main menu', exact: true })
+  await expect(menu).toBeVisible()
 
   await page.keyboard.press('Tab')
 
-  const button = page.getByRole('button', { name: 'Probe' })
-  await expect(button).toBeFocused()
-  await expect(button).toHaveCSS('outline-style', 'solid')
-  await expect(button).toHaveCSS('outline-width', '2px')
-  await expect(button).toHaveCSS('outline-color', computedRgb('--color-primary'))
+  const link = menu.getByRole('link').first()
+  await expect(link).toBeFocused()
+  await expect(link).toHaveCSS('outline-style', 'solid')
+  await expect(link).toHaveCSS('outline-width', '2px')
+  await expect(link).toHaveCSS('outline-color', computedRgb('--color-primary'))
 })
 
 // Measured with and without the setting, so the reset is proven to come from the media query.
