@@ -8,7 +8,18 @@
     "history": "History",
     "newSession": "New session",
     "settings": "Settings",
-    "theme": "Switch theme"
+    "theme": "Switch theme",
+    "mainMenu": "Main menu",
+    "mainNavigation": "Main navigation",
+    "preferences": "Preferences",
+    "logo": "tansa · Home"
+  },
+  "home": {
+    "tagline": "探査 · exploratory testing sessions",
+    "resume": "Resume session"
+  },
+  "errors": {
+    "storage": "TANSA could not open its local storage. Allow site data for this page in your browser settings, then reload."
   },
   "sbtm": {
     "charter": "Charter",

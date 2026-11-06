@@ -1,0 +1,133 @@
+/* Home (TAN-17). Colors only from tokens.css. */
+
+.home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 36px;
+  padding: 48px 24px;
+}
+
+.home-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.home-title {
+  margin: 0;
+  font-size: 64px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+
+.home-tagline {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.home-menu {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 34px 34px 34px 10px;
+  background: var(--color-card);
+  box-shadow:
+    0 0 0 1px var(--color-hair),
+    var(--shadow-menu);
+}
+
+.home-main {
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 22px;
+  border-radius: 26px 26px 26px 8px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  text-decoration: none;
+}
+
+.home-main-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.home-main-title {
+  flex: 1 1 auto;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* A charter can hold a long unbroken token (a URL, a SKU): wrap it inside the button. */
+.home-main-detail {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.home-main-arrow {
+  flex: none;
+  font-size: 22px;
+}
+
+.home-chip {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22px 22px 22px 6px;
+  background: color-mix(in srgb, var(--color-on-accent) 12%, transparent);
+}
+
+.home-ring {
+  flex: none;
+  fill: none;
+}
+
+.home-ring-track {
+  stroke: color-mix(in srgb, var(--color-on-accent) 20%, transparent);
+  stroke-width: 2;
+}
+
+.home-ring-arc {
+  stroke: var(--color-on-accent);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 70 113;
+}
+
+.home-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.home-tile {
+  flex: 1 1 120px;
+  min-width: 0;
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 22px 22px 22px 6px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+}
