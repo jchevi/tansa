@@ -160,6 +160,69 @@ export default defineConfig([
     },
   },
   {
+    // Local-first: the data layer never talks to the network [TAN-14]. Known gaps:
+    // bracket access (globalThis['fetch']), dynamic import(), a URL set as an image or
+    // element src, and aliases (const g = globalThis; g.fetch()). The runtime test in
+    // src/data/no-network.test.ts covers the paths it runs.
+    // These rules are set by no other block, so neither block replaces the other's
+    // options (see the no-restricted-syntax note above).
+    files: ['src/data/**/*.ts'],
+    ignores: ['**/*.test.ts'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        ...[
+          'fetch',
+          'XMLHttpRequest',
+          'WebSocket',
+          'EventSource',
+          'WebTransport',
+          'RTCPeerConnection',
+        ].map((name) => ({ name, message: 'The data layer makes no network requests.' })),
+      ],
+      'no-restricted-properties': [
+        'error',
+        ...[
+          ['navigator', 'sendBeacon'],
+          ['window', 'fetch'],
+          ['globalThis', 'fetch'],
+          ['self', 'fetch'],
+        ].map(([object, property]) => ({
+          object,
+          property,
+          message: 'The data layer makes no network requests.',
+        })),
+      ],
+      'no-restricted-imports': [
+        'error',
+        {
+          // An allow-list: idb and relative modules only, so no network library gets in.
+          patterns: [
+            {
+              regex: '^(?!idb$|\\.{1,2}/)',
+              message: 'src/data imports only idb and its own modules.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Components never touch IndexedDB: they go through src/data [TAN-14].
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/data/**', '**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        { name: 'indexedDB', message: 'Use the data layer in src/data.' },
+      ],
+      'no-restricted-imports': [
+        'error',
+        { paths: [{ name: 'idb', message: 'Use the data layer in src/data.' }] },
+      ],
+    },
+  },
+  {
     // The review-loop hooks run in Node, not the browser [TAN-34].
     files: ['.claude/hooks/**/*.ts'],
     languageOptions: { globals: globals.node },
