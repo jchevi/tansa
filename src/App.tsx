@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
+import { NewSession } from './features/charter/NewSession'
 import { Home } from './features/home/Home'
+import { SessionScreen } from './features/session/SessionScreen'
 import { DbProvider } from './features/shell/DbProvider'
 import { useDb } from './features/shell/db-context'
 import { Navigation } from './features/shell/Navigation'
@@ -9,9 +11,10 @@ import { matchRoute, routes, type Route } from './features/shell/routes'
 import { StorageError } from './features/shell/StorageError'
 import { useSessionInProgress } from './features/shell/useSessionInProgress'
 
-const placeholderTitles: Record<Exclude<Route, 'home'>, PlaceholderTitle> = {
-  newSession: 'nav.newSession',
-  session: 'nav.session',
+const placeholderTitles: Record<
+  Exclude<Route, 'home' | 'newSession' | 'session'>,
+  PlaceholderTitle
+> = {
   history: 'nav.history',
   settings: 'nav.settings',
 }
@@ -20,7 +23,7 @@ function Shell() {
   const db = useDb()
   const path = usePath()
   const route = matchRoute(path)
-  const progress = useSessionInProgress(db, path)
+  const { state: progress, reload } = useSessionInProgress(db, path)
 
   // An unknown path shows Home; the address bar says so too.
   useEffect(() => {
@@ -35,7 +38,17 @@ function Shell() {
   return (
     <>
       <Navigation current={route} hasSessionInProgress={progress.inProgress !== null} />
-      <Placeholder title={placeholderTitles[route]} />
+      {route === 'newSession' ? (
+        <NewSession
+          db={db}
+          hasSessionInProgress={progress.inProgress !== null}
+          onSessionInProgress={reload}
+        />
+      ) : route === 'session' ? (
+        <SessionScreen inProgress={progress.inProgress} />
+      ) : (
+        <Placeholder title={placeholderTitles[route]} />
+      )}
     </>
   )
 }
