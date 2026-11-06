@@ -1,9 +1,17 @@
 // The only public surface of the data layer. Components import from here and
 // never touch IndexedDB directly.
 export { DB_VERSION, openTansaDb, type TansaDb } from './db'
-export { InvalidRecordError, RecordNotFoundError } from './errors'
+export { InvalidRecordError, RecordNotFoundError, SessionInProgressError } from './errors'
 export { createNote, deleteNote, getNote, listNotes, updateNote } from './notes'
-export { createSession, deleteSession, getSession, listSessions, updateSession } from './sessions'
+export {
+  createSession,
+  deleteSession,
+  getSession,
+  isInProgress,
+  listSessions,
+  startSession,
+  updateSession,
+} from './sessions'
 export {
   createTimeSegment,
   deleteTimeSegment,

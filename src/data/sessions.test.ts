@@ -7,9 +7,12 @@ import {
   createTimeSegment,
   deleteSession,
   getSession,
+  isInProgress,
   listSessions,
   openTansaDb,
   RecordNotFoundError,
+  SessionInProgressError,
+  startSession,
   updateSession,
   type NewSession,
   type SessionPatch,
@@ -148,5 +151,81 @@ describe('deleteSession', () => {
     const segments = await db.getAll('timeSegments')
     expect(notes.map((n) => n.sessionId)).toEqual([kept.id])
     expect(segments.map((s) => s.sessionId)).toEqual([kept.id])
+  })
+})
+
+describe('isInProgress', () => {
+  it('@TAN-18 is true for running and paused, false for debrief and closed', () => {
+    expect(isInProgress('running')).toBe(true)
+    expect(isInProgress('paused')).toBe(true)
+    expect(isInProgress('debrief')).toBe(false)
+    expect(isInProgress('closed')).toBe(false)
+  })
+})
+
+describe('startSession', () => {
+  const charter = { explore: 'the wish list', with: 'a signed-in user', discover: 'sync gaps' }
+
+  it('@TAN-18 creates a running session and its first open running segment', async () => {
+    vi.setSystemTime(7_000)
+
+    const { session, segment } = await startSession(db, charter)
+
+    expect(session.id).toMatch(UUID_V4)
+    expect(session).toMatchObject({
+      status: 'running',
+      charter,
+      areas: [],
+      targetMinutes: 60,
+      createdAt: 7_000,
+    })
+    expect(segment.id).toMatch(UUID_V4)
+    expect(segment).toEqual({
+      id: segment.id,
+      sessionId: session.id,
+      state: 'running',
+      startedAt: 7_000,
+    })
+    expect(await db.getAll('sessions')).toEqual([session])
+    expect(await db.getAll('timeSegments')).toEqual([segment])
+  })
+
+  it.each(['running', 'paused'] as const)(
+    '@TAN-18 rejects while a %s session exists and writes nothing',
+    async (status) => {
+      await createSession(db, newSession({ status }))
+      const before = {
+        sessions: await db.count('sessions'),
+        segments: await db.count('timeSegments'),
+      }
+
+      await expect(startSession(db, charter)).rejects.toBeInstanceOf(SessionInProgressError)
+
+      expect(await db.count('sessions')).toBe(before.sessions)
+      expect(await db.count('timeSegments')).toBe(before.segments)
+    },
+  )
+
+  it('@TAN-18 starts when only debrief and closed sessions exist', async () => {
+    await createSession(db, newSession({ status: 'debrief' }))
+    await createSession(db, newSession({ status: 'closed' }))
+
+    const { session } = await startSession(db, charter)
+
+    expect(session.status).toBe('running')
+    expect(await db.count('sessions')).toBe(3)
+    expect(await db.count('timeSegments')).toBe(1)
+  })
+
+  it('@TAN-18 two starts at once leave a single session in progress', async () => {
+    const results = await Promise.allSettled([startSession(db, charter), startSession(db, charter)])
+
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1)
+    const rejected = results.find((r) => r.status === 'rejected')
+    expect(rejected?.status === 'rejected' && rejected.reason).toBeInstanceOf(
+      SessionInProgressError,
+    )
+    expect(await db.count('sessions')).toBe(1)
+    expect(await db.count('timeSegments')).toBe(1)
   })
 })
