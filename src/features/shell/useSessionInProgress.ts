@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
+  isInProgress,
   listSessions,
   listTimeSegments,
   type Session,
-  type SessionStatus,
   type TansaDb,
   type TimeSegment,
 } from '../../data'
@@ -18,23 +18,29 @@ export type InProgressState =
   | { status: 'ready'; inProgress: SessionInProgress | null }
   | { status: 'failed' }
 
-// "In progress" is running or paused: a paused session is still the one the tester comes
-// back to (spec R9, R14). Debrief and closed are not.
-const IN_PROGRESS: readonly SessionStatus[] = ['running', 'paused']
-
-// The newest session in progress with its time segments, or null. TAN-18 allows only one
-// at a time; if there were several, the newest wins.
+// The newest session in progress (running or paused, see isInProgress) with its time
+// segments, or null. startSession allows only one at a time; if there were several, the
+// newest wins.
 export async function findSessionInProgress(db: TansaDb): Promise<SessionInProgress | null> {
   const sessions = await listSessions(db)
-  const session = sessions.find((candidate) => IN_PROGRESS.includes(candidate.status))
+  const session = sessions.find((candidate) => isInProgress(candidate.status))
   if (!session) return null
   return { session, segments: await listTimeSegments(db, session.id) }
 }
 
 // Read again on every screen change, so Home and the navigation see a session started or
-// ended on another screen. Until the first read finishes, the state is loading.
-export function useSessionInProgress(db: TansaDb, path: string): InProgressState {
+// ended on another screen, and on reload() for a change made without one (a start
+// refused because another tab started a session). Until the first read finishes, the
+// state is loading.
+export function useSessionInProgress(
+  db: TansaDb,
+  path: string,
+): { state: InProgressState; reload: () => void } {
   const [state, setState] = useState<InProgressState>({ status: 'loading' })
+  const [version, setVersion] = useState(0)
+  const reload = useCallback(() => {
+    setVersion((current) => current + 1)
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -50,7 +56,7 @@ export function useSessionInProgress(db: TansaDb, path: string): InProgressState
     return () => {
       active = false
     }
-  }, [db, path])
+  }, [db, path, version])
 
-  return state
+  return { state, reload }
 }

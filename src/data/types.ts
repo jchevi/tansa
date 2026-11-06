@@ -59,6 +59,12 @@ export interface TimeSegment {
   endedAt?: number
 }
 
+// What startSession writes: the session and its first, open, running segment.
+export interface StartedSession {
+  session: Session
+  segment: TimeSegment
+}
+
 // The data layer sets ids and creation times, so inputs never carry them.
 export type NewSession = Omit<Session, 'id' | 'createdAt'>
 export type SessionPatch = Partial<Omit<Session, 'id' | 'createdAt'>>

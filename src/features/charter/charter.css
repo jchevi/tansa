@@ -1,0 +1,172 @@
+/* New session: the charter form (mockup "v0.1 · New session (charter)") [TAN-18]. */
+.charter {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.charter-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* The h1 is the screen's navigation name, styled as the mockup's eyebrow. */
+.charter-eyebrow {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent-strong);
+}
+
+.charter-lead {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(30px, 6vw, 46px);
+  font-weight: 900;
+  line-height: 1.2;
+  color: var(--color-ink);
+}
+
+.charter-form {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.charter-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.charter-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px 18px;
+  border-radius: 22px 22px 22px 4px;
+  background: var(--color-card);
+  /* Decorative outline; the field's own border is what must be seen (3:1). */
+  box-shadow: inset 0 0 0 1px var(--color-hair);
+}
+
+.charter-card-explore {
+  grid-column: 1 / -1;
+}
+
+.charter-label {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--color-accent-strong);
+}
+
+.charter-hint {
+  font-family: var(--font-ui);
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--color-muted);
+}
+
+.charter-input {
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+  padding: 8px 10px;
+  border: 1px solid var(--color-muted);
+  border-radius: 10px;
+  background: var(--color-card);
+  color: var(--color-ink);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.charter-card-explore .charter-input {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.charter-input::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
+}
+
+.charter-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-hair);
+}
+
+.charter-status,
+.charter-error {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-ink);
+}
+
+.charter-error {
+  flex-basis: 100%;
+  text-align: end;
+}
+
+.charter-start {
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 26px;
+  border: 1px solid var(--color-primary);
+  border-radius: 26px 26px 26px 6px;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.charter-start:disabled {
+  border: 1px dashed var(--color-muted);
+  background: transparent;
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+.charter-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 24px 24px 24px 6px;
+  background: var(--color-card);
+  box-shadow: inset 0 0 0 1px var(--color-hair);
+}
+
+.charter-notice p {
+  flex: 1 1 280px;
+  margin: 0;
+  color: var(--color-ink);
+}
+
+@media (max-width: 560px) {
+  .charter-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
