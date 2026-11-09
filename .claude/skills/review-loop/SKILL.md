@@ -53,12 +53,21 @@ A round is each distinct plan hash or HEAD SHA within a phase. The plan hash is 
 ## Stop rule
 
 - A round is clean when neither reviewer reports an open blocker or major.
-- Minors are not fixed in this PR. List them for the owner as notes for new tickets; once the owner creates the tickets, use their keys in the review line. Pass them to the next round as deferred: deferred minors are not reopened and do not count toward escalation.
+- Minors are not fixed in this PR. Create the follow-up tickets yourself in Jira; the owner does not create them. Group the minors by area, one ticket per area (as TAN-35 to TAN-40). File plan minors before presenting the plan, and code minors before `gh pr create`. Put the keys in the review line; write "Minors: none" only when there are none. Pass them to the next round as deferred: deferred minors are not reopened and do not count toward escalation.
 - After 3 consecutive open rounds in a phase, stop and ask the owner what to do. A clean round resets the count, so a QA bounce-back or a plan change after a clean round starts again from zero.
 - Resuming a reviewer with `SendMessage` counts as a launch. The missing reviewer of the latest round can still be launched while its ref is current, so a round that stalled can be finished.
 - Escalate to the owner, without waiting for round 3:
   - A finding reopened twice.
   - A rejected finding that a reviewer reopens.
+
+## Follow-up tickets
+
+The same shape for review minors, out-of-scope work and Definition of Done exceptions:
+
+- Description: **Goal**; **Why**, with the source ticket and the finding ids; **Scope**; acceptance criteria in Gherkin; **Verification**.
+- Parent: the epic of the area. Tasks get the label `tech-debt`, `a11y` or `build-log`.
+- A defect is a Bug. A Story that needs a spec decision says so in its Why.
+- After `gh pr create`, add the PR link to each ticket's Why.
 
 ## Owner reset
 
