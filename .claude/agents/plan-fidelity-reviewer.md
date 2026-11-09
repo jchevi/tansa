@@ -17,7 +17,7 @@ The prompt gives you the ticket key, the ticket text with its acceptance criteri
 2. **Spec**: nothing in the plan contradicts `docs/spec.md` (requirements R1–R15, data model). Quote the section.
 3. **Decisions**: nothing contradicts a row in `docs/decisions.md`, unless the plan says it supersedes it and why.
 4. **Hard rules** in `CLAUDE.md`: local-first, data only through `src/data`, UUIDs, time as stored segments, tokens instead of colors, `src/i18n` instead of UI text, untranslated SBTM terms, public data only, no secrets, accessibility.
-5. **Scope**: work the ticket does not ask for (it belongs in a note for a new ticket) and work the ticket asks for that the plan skips.
+5. **Scope**: work the ticket does not ask for (it belongs in a follow-up ticket) and work the ticket asks for that the plan skips.
 6. **Ambiguity**: anything in the ticket that conflicts with the spec or a decision and that the plan resolves silently instead of asking the owner.
 7. **Files**: the list of files to touch is complete for what the plan describes.
 
@@ -25,14 +25,14 @@ The prompt gives you the ticket key, the ticket text with its acceptance criteri
 
 - Read the files yourself. Every finding cites evidence you opened: `file:line` or a spec or decision section. Never invent a line number.
 - Recompute any figure you report (counts, ratios, sizes) instead of copying it from the plan.
-- From round 2: for each previous finding, check it against the files and mark it `resolved` (the fix holds), `reopened` (the fix does not hold, or you still hold a finding the main agent rejected) or `deferred` (a minor the main agent kept as a note for a new ticket; a deferred minor is not reopened). Give the reason. Then look for new findings.
+- From round 2: for each previous finding, check it against the files and mark it `resolved` (the fix holds), `reopened` (the fix does not hold, or you still hold a finding the main agent rejected) or `deferred` (a minor the main agent filed as a follow-up ticket; a deferred minor is not reopened). Give the reason. Then look for new findings.
 - An idea that is not in the ticket is at most a minor.
 
 ## Severity
 
 - **blocker**: the plan breaks a hard rule, or an acceptance criterion cannot pass as planned.
 - **major**: a criterion is missing or changed, the plan contradicts the spec or a decision, or it resolves an ambiguity silently.
-- **minor**: anything else worth a note. Minors are not fixed in this PR; they become notes for new tickets.
+- **minor**: anything else worth a note. Minors are not fixed in this PR; they become follow-up tickets the main agent creates.
 
 ## Output
 

@@ -26,14 +26,14 @@ The prompt gives you the ticket key, the ticket text with its acceptance criteri
 
 - Read the files yourself, including existing tests and configs the plan relies on. Every finding cites evidence you opened: `file:line` or a spec or decision section. Never invent a line number.
 - Recompute any figure you report instead of copying it from the plan.
-- From round 2: for each previous finding, check it against the files and mark it `resolved` (the fix holds), `reopened` (the fix does not hold, or you still hold a finding the main agent rejected) or `deferred` (a minor the main agent kept as a note for a new ticket; a deferred minor is not reopened). Give the reason. Then look for new findings.
+- From round 2: for each previous finding, check it against the files and mark it `resolved` (the fix holds), `reopened` (the fix does not hold, or you still hold a finding the main agent rejected) or `deferred` (a minor the main agent filed as a follow-up ticket; a deferred minor is not reopened). Give the reason. Then look for new findings.
 - An idea that is not in the ticket is at most a minor.
 
 ## Severity
 
 - **blocker**: an acceptance criterion has no way to be tested as planned, or the plan breaks a hard rule.
 - **major**: a test that would pass with the feature broken, a criterion without a test, a likely edge case left out, or a wrong order.
-- **minor**: anything else worth a note. Minors are not fixed in this PR; they become notes for new tickets.
+- **minor**: anything else worth a note. Minors are not fixed in this PR; they become follow-up tickets the main agent creates.
 
 ## Output
 

@@ -28,7 +28,7 @@ It is built by one person (a senior QA engineer, intermediate programmer) as a p
 1. One Jira ticket at a time. Start by reading the ticket and the related part of `docs/spec.md`.
 2. Plan before coding: write `.claude/plans/TAN-<n>.md` with the files you will touch and how each acceptance criterion will be tested, run `/review-loop plan` until it is clean, then present it. Wait for approval on anything non-trivial.
 3. If the ticket is ambiguous or conflicts with the spec or a decision, **stop and ask**. Do not resolve it silently.
-4. Keep scope small: anything not in the ticket goes into a note for a new ticket, not into the code.
+4. Keep scope small: anything not in the ticket becomes a Jira ticket that Claude creates in the same session (shape in the `review-loop` skill), not a note and not code. An exception to the Definition of Done (e.g. a deferred exploratory session) gets its Process row in `docs/decisions.md` and a ticket in the same session.
 5. Write the test from the acceptance criteria first (Playwright for stories, Vitest or another automated check for tasks), see it fail, then write the code.
 
 ## Conventions
