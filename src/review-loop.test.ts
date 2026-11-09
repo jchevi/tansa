@@ -6,6 +6,15 @@ const fromRoot = (relative: string) => fileURLToPath(new URL(`../${relative}`, i
 const read = (relative: string) => readFileSync(fromRoot(relative), 'utf8')
 const lines = (text: string) => text.split(/\r?\n/)
 
+// The text of one "## " section, so a phrase found elsewhere in the file doesn't count.
+// Same helper as in workflow-docs.test.ts [TAN-55].
+function section(markdown: string, heading: string): string {
+  const start = markdown.indexOf(`\n## ${heading}\n`)
+  if (start === -1) throw new Error(`Section "## ${heading}" not found`)
+  const end = markdown.indexOf('\n## ', start + 1)
+  return markdown.slice(start, end === -1 ? undefined : end)
+}
+
 // The verdict line every reviewer ends with. TAN-34's SubagentStop hook parses this exact
 // shape, so changing it here means changing the hook too [TAN-33].
 const verdictTemplate =
@@ -156,5 +165,95 @@ describe('workflow docs for the review loop', () => {
       line.includes('No AI attribution in commits or PRs'),
     )
     expect(row).toMatch(/^\| 2026-11-03 \|/)
+  })
+})
+
+// Follow-ups used to stay as "notes for new tickets" that nobody filed. Claude files them
+// itself. The negative checks matter: adding the new sentence next to the old one must
+// fail [TAN-55].
+describe('follow-up tickets', () => {
+  const skill = () => read('.claude/skills/review-loop/SKILL.md')
+  const claude = () => read('CLAUDE.md')
+  const oldWording = [
+    'once the owner creates the tickets',
+    'notes for new tickets',
+    'a note for a new ticket',
+  ]
+
+  it('@TAN-55 the Stop rule says to create the follow-up tickets before gh pr create', () => {
+    const stop = section(skill(), 'Stop rule')
+    for (const text of [
+      'Create the follow-up tickets yourself in Jira',
+      'one ticket per area',
+      'File plan minors before presenting the plan',
+      'code minors before `gh pr create`',
+      'write "Minors: none" only when there are none',
+    ]) {
+      expect(stop).toContain(text)
+    }
+  })
+
+  it('@TAN-55 the skill no longer leaves the tickets to the owner', () => {
+    expect(section(skill(), 'Stop rule')).toContain('the owner does not create them')
+    for (const text of oldWording) expect(skill()).not.toContain(text)
+  })
+
+  it('@TAN-55 the skill gives the follow-up ticket shape', () => {
+    const shape = section(skill(), 'Follow-up tickets')
+    for (const text of [
+      '**Goal**',
+      '**Why**',
+      'the finding ids',
+      '**Scope**',
+      'acceptance criteria in Gherkin',
+      '**Verification**',
+      'the epic of the area',
+      '`tech-debt`',
+      '`a11y`',
+      '`build-log`',
+      'A defect is a Bug',
+      'needs a spec decision',
+      'add the PR link',
+    ]) {
+      expect(shape).toContain(text)
+    }
+  })
+
+  it('@TAN-55 How to work says out-of-scope work becomes a ticket Claude creates', () => {
+    const howTo = section(claude(), 'How to work')
+    expect(howTo).toContain('becomes a Jira ticket that Claude creates')
+    for (const text of oldWording) expect(howTo).not.toContain(text)
+  })
+
+  it('@TAN-55 How to work gives a Definition of Done exception a Process row and a ticket', () => {
+    const howTo = section(claude(), 'How to work')
+    expect(howTo).toContain('An exception to the Definition of Done')
+    expect(howTo).toContain(
+      'gets its Process row in `docs/decisions.md` and a ticket in the same session',
+    )
+  })
+
+  it.each(names)('@TAN-55 %s says minors become follow-up tickets', (name) => {
+    const body = agent(name)
+    expect(body).toContain('they become follow-up tickets the main agent creates')
+    expect(body).toContain('a minor the main agent filed as a follow-up ticket')
+    expect(body).toContain('a deferred minor is not reopened')
+    for (const text of oldWording) expect(body).not.toContain(text)
+  })
+
+  it('@TAN-55 the decision log records who files follow-up tickets', () => {
+    const log = lines(read('docs/decisions.md'))
+    const row = log.find(
+      (line) =>
+        line.startsWith('| 2026-11-09 |') &&
+        line.includes('Claude files every follow-up as a Jira ticket'),
+    )
+    expect(row).toBeDefined()
+    expect(row).toContain('(TAN-55)')
+    const reviewLoopRow = log.find((line) => line.includes('Minors become notes for new tickets'))
+    expect(reviewLoopRow).toMatch(
+      /^\| 2026-11-04 \| \*\(Superseded in part by the TAN-55 row below/,
+    )
+    expect(log.some((line) => line.includes('(note for a new ticket)'))).toBe(false)
   })
 })
