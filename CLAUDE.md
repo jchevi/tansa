@@ -47,6 +47,7 @@ It is built by one person (a senior QA engineer, intermediate programmer) as a p
 5. Delete the branch. GitHub deletes the remote branch on merge; delete the local one with `git branch -d`.
 6. Move the ticket to **Done**.
 7. Sync: `git checkout main && git pull`.
+8. Hand off: give the owner a short summary of the ticket and a ready-to-paste prompt to start the next ticket in the approved order in a new chat (context, ticket and lifecycle steps, why, scope, constraints), so each chat keeps one ticket's context. If the next ticket is directly related and best built right after, say so and offer to continue in the same chat instead.
 
 ## Definition of Done
 - Acceptance criteria met.
