@@ -15,6 +15,7 @@ import {
   listSessions,
   listTimeSegments,
   openTansaDb,
+  startSession,
   updateNote,
   updateSession,
   updateTimeSegment,
@@ -69,6 +70,23 @@ it('@TAN-14 the data layer makes no network requests', async () => {
     await deleteNote(db, note.id)
     await deleteTimeSegment(db, segment.id)
     await deleteSession(db, session.id)
+  } finally {
+    db.close()
+  }
+
+  for (const [name, spy] of Object.entries(spies)) {
+    expect(spy, name).not.toHaveBeenCalled()
+  }
+})
+
+it('@TAN-18 startSession makes no network requests', async () => {
+  const db = await openTansaDb()
+  try {
+    await startSession(db, {
+      explore: 'the size guide',
+      with: 'a mobile viewport',
+      discover: 'layout gaps',
+    })
   } finally {
     db.close()
   }

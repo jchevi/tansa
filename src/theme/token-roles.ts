@@ -20,15 +20,19 @@ export const textPairs: readonly Pair[] = [
   ['--color-ink', '--color-issue-bg'],
 ]
 
-// Non-text UI that must be seen: WCAG 1.4.11, 3:1. The focus ring uses --color-primary.
+// Non-text UI that must be seen: WCAG 1.4.11, 3:1. The focus ring uses --color-primary;
+// input borders use --color-muted [TAN-18].
 export const nonTextPairs: readonly Pair[] = [
   ['--color-primary', '--color-bg'],
   ['--color-primary', '--color-surface'],
   ['--color-primary', '--color-card'],
+  ['--color-muted', '--color-bg'],
+  ['--color-muted', '--color-card'],
 ]
 
 // Never text, and never the only way to tell things apart: buttons carry text, tags and
-// status carry a label. Input borders (hair) get a 3:1 check when inputs arrive (TAN-18/19).
+// status carry a label. --color-hair only outlines cards: an input's boundary is its
+// --color-muted border, checked above [TAN-18].
 export const decorative: readonly string[] = [
   '--color-hair',
   '--color-accent',

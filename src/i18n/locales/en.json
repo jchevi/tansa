@@ -21,6 +21,20 @@
   "errors": {
     "storage": "TANSA could not open its local storage. Allow site data for this page in your browser settings, then reload."
   },
+  "charter": {
+    "lead": "What will you explore?",
+    "exploreHint": "the area or feature",
+    "withHint": "resources, data or heuristics",
+    "discoverHint": "what information you're after",
+    "exploreExample": "the cart and promo codes",
+    "withExample": "valid, expired and stacked codes",
+    "discoverExample": "errors when applying or stacking discounts",
+    "start": "Start session",
+    "missing": "Missing: {{fields}}",
+    "complete": "Charter complete",
+    "inProgress": "A session is already in progress. Resume it or end it before starting a new one.",
+    "startFailed": "The session could not be started. Try again."
+  },
   "sbtm": {
     "charter": "Charter",
     "explore": "Explore",
