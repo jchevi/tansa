@@ -32,6 +32,22 @@ describe('workflow docs', () => {
     expect(line).toContain(text)
   })
 
+  // One chat per ticket keeps its context, so the last step hands off the next ticket
+  // instead of starting it here [TAN-67].
+  it('@TAN-67 lifecycle step 8 hands off the next ticket in a new chat', () => {
+    const line = lifecycle.split(/\r?\n/).find((l) => l.startsWith('8. '))
+    expect(line).toBeDefined()
+    for (const text of [
+      'a short summary of the ticket',
+      'ready-to-paste prompt to start the next ticket',
+      'in a new chat',
+      'If the next ticket is directly related',
+      'offer to continue in the same chat',
+    ]) {
+      expect(line).toContain(text)
+    }
+  })
+
   it('@TAN-28 CLAUDE.md and the decision log agree on merge commits', () => {
     expect(lifecycle).toContain('Merge with a merge commit (the only method the repo allows)')
     const decision = decisions.split(/\r?\n/).find((l) => l.includes('Merge commits only'))
