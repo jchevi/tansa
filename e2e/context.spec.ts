@@ -357,18 +357,19 @@ test('@TAN-19 multi-line fields keep a minimum and a maximum height', async ({ p
   await openNewSession(page)
   const manyLines = Array.from({ length: 40 }, (_, n) => `line ${String(n + 1)}`).join('\n')
 
-  for (const field of [
-    exploreField(page),
-    withField(page),
-    discoverField(page),
-    testDataField(page),
+  // Explore is a one-line field; the others keep room for two lines.
+  for (const { field, lines } of [
+    { field: exploreField(page), lines: 1 },
+    { field: withField(page), lines: 2 },
+    { field: discoverField(page), lines: 2 },
+    { field: testDataField(page), lines: 2 },
   ]) {
     // Dragging the resize handle sets an inline height, so the test sets one too.
     const lineHeight = await field.evaluate((el) => parseFloat(getComputedStyle(el).lineHeight))
     await field.evaluate((el) => {
       el.style.height = '0px'
     })
-    expect((await field.boundingBox())?.height).toBeGreaterThanOrEqual(lineHeight)
+    expect((await field.boundingBox())?.height).toBeGreaterThanOrEqual(lines * lineHeight)
 
     await field.evaluate((el) => {
       el.style.height = '3000px'
