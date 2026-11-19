@@ -79,6 +79,23 @@ it('@TAN-14 the data layer makes no network requests', async () => {
   }
 })
 
+it('@TAN-19 startSession with a context makes no network requests', async () => {
+  const db = await openTansaDb()
+  try {
+    await startSession(
+      db,
+      { explore: 'the checkout', with: 'a saved card', discover: 'payment errors' },
+      { environment: 'Staging', build: '1.4.2', areas: ['Checkout'], testData: 'a test card' },
+    )
+  } finally {
+    db.close()
+  }
+
+  for (const [name, spy] of Object.entries(spies)) {
+    expect(spy, name).not.toHaveBeenCalled()
+  }
+})
+
 it('@TAN-18 startSession makes no network requests', async () => {
   const db = await openTansaDb()
   try {

@@ -5,6 +5,7 @@ import type {
   NewSession,
   Session,
   SessionPatch,
+  SessionContext,
   SessionStatus,
   StartedSession,
   TimeSegment,
@@ -25,7 +26,11 @@ const DEFAULT_TARGET_MINUTES = 60
 // session already in progress runs inside the same transaction: IndexedDB runs
 // overlapping readwrite transactions on a store one after the other, so a second tab or a
 // double click cannot slip a second session in between the check and the write.
-export async function startSession(db: TansaDb, charter: Charter): Promise<StartedSession> {
+export async function startSession(
+  db: TansaDb,
+  charter: Charter,
+  _context: SessionContext = { areas: [] },
+): Promise<StartedSession> {
   const tx = db.transaction(['sessions', 'timeSegments'], 'readwrite')
   const sessions = await tx.objectStore('sessions').getAll()
   const current = sessions.find((stored) => isInProgress(stored.status))
