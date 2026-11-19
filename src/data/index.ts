@@ -5,11 +5,13 @@ export { InvalidRecordError, RecordNotFoundError, SessionInProgressError } from 
 export { createNote, deleteNote, getNote, listNotes, updateNote } from './notes'
 export {
   createSession,
+  DEFAULT_TARGET_MINUTES,
   deleteSession,
   getSession,
   isInProgress,
   listSessions,
   startSession,
+  TARGET_MINUTE_OPTIONS,
   updateSession,
 } from './sessions'
 export {

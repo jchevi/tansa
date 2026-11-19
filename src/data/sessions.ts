@@ -1,13 +1,13 @@
 import { abortWith, sessionRange, type TansaDb } from './db'
-import { RecordNotFoundError, SessionInProgressError } from './errors'
+import { InvalidRecordError, RecordNotFoundError, SessionInProgressError } from './errors'
 import type {
-  Charter,
   NewSession,
   Session,
   SessionPatch,
-  SessionContext,
   SessionStatus,
   StartedSession,
+  StartSessionInput,
+  TargetMinutes,
   TimeSegment,
 } from './types'
 
@@ -18,8 +18,14 @@ export function isInProgress(status: SessionStatus): boolean {
   return status === 'running' || status === 'paused'
 }
 
-// R1's default time-box; TAN-20 lets the tester choose another one.
-const DEFAULT_TARGET_MINUTES = 60
+// R1's time-boxes and its default. The screen builds its choice from this list, so the
+// screen and the store can never disagree [TAN-20].
+export const TARGET_MINUTE_OPTIONS = [45, 60, 90, 120] as const satisfies readonly TargetMinutes[]
+export const DEFAULT_TARGET_MINUTES: TargetMinutes = 60
+
+function isTargetMinutes(value: unknown): value is TargetMinutes {
+  return (TARGET_MINUTE_OPTIONS as readonly unknown[]).includes(value)
+}
 
 // Starts a session: the session and its first running segment are written in one
 // transaction, so a failure never leaves a running session with no time. The check for a
@@ -27,11 +33,15 @@ const DEFAULT_TARGET_MINUTES = 60
 // overlapping readwrite transactions on a store one after the other, so a second tab or a
 // double click cannot slip a second session in between the check and the write.
 // The context is stored as given; the screen trims it and leaves out blank fields.
+// A target outside R1's list is refused before anything is opened: the timer and its
+// warning (TAN-21) measure against it, and a 0 or NaN would break them silently [TAN-20].
 export async function startSession(
   db: TansaDb,
-  charter: Charter,
-  context: SessionContext = { areas: [] },
+  { charter, context = { areas: [] }, targetMinutes = DEFAULT_TARGET_MINUTES }: StartSessionInput,
 ): Promise<StartedSession> {
+  if (!isTargetMinutes(targetMinutes)) {
+    throw new InvalidRecordError(`${String(targetMinutes)} is not a session time-box`)
+  }
   const tx = db.transaction(['sessions', 'timeSegments'], 'readwrite')
   const sessions = await tx.objectStore('sessions').getAll()
   const current = sessions.find((stored) => isInProgress(stored.status))
@@ -49,7 +59,7 @@ export async function startSession(
     ...(context.environment !== undefined && { environment: context.environment }),
     ...(context.build !== undefined && { build: context.build }),
     ...(context.testData !== undefined && { testData: context.testData }),
-    targetMinutes: DEFAULT_TARGET_MINUTES,
+    targetMinutes,
     createdAt: now,
   }
   const segment: TimeSegment = {

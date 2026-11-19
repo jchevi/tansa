@@ -68,6 +68,19 @@ export interface SessionContext {
   testData?: string
 }
 
+// The time-boxes a session can start with (spec R1). Written out, not derived from the
+// list in sessions.ts, because this module has no imports: the e2e project imports it
+// directly [TAN-20].
+export type TargetMinutes = 45 | 60 | 90 | 120
+
+// What startSession takes. The context and the target are optional: no context stores
+// none, no target stores R1's default [TAN-20].
+export interface StartSessionInput {
+  charter: Charter
+  context?: SessionContext
+  targetMinutes?: TargetMinutes
+}
+
 // What startSession writes: the session and its first, open, running segment.
 export interface StartedSession {
   session: Session
