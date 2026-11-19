@@ -364,17 +364,20 @@ test('@TAN-19 multi-line fields keep a minimum and a maximum height', async ({ p
     { field: discoverField(page), lines: 2 },
     { field: testDataField(page), lines: 2 },
   ]) {
-    // Dragging the resize handle sets an inline height, so the test sets one too.
-    const lineHeight = await field.evaluate((el) => parseFloat(getComputedStyle(el).lineHeight))
-    await field.evaluate((el) => {
-      el.style.height = '0px'
-    })
-    expect((await field.boundingBox())?.height).toBeGreaterThanOrEqual(lines * lineHeight)
+    // Dragging the resize handle sets an inline height, so the test sets one too. The
+    // bounds are checked on the content area (without padding), in lines of text.
+    const linesShown = (height: string) =>
+      field.evaluate((el, value) => {
+        el.style.height = value
+        const style = getComputedStyle(el)
+        const padding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
+        return (el.clientHeight - padding) / parseFloat(style.lineHeight)
+      }, height)
 
-    await field.evaluate((el) => {
-      el.style.height = '3000px'
-    })
-    expect((await field.boundingBox())?.height).toBeLessThanOrEqual(400)
+    expect(await linesShown('0px')).toBeGreaterThanOrEqual(lines - 0.05)
+    expect(await linesShown('0px')).toBeLessThan(lines + 0.5)
+    expect(await linesShown('3000px')).toBeGreaterThan(9.5)
+    expect(await linesShown('3000px')).toBeLessThanOrEqual(10.05)
 
     await field.fill(manyLines)
     // Past the maximum the field scrolls inside instead of growing.
