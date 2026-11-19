@@ -163,8 +163,9 @@ test('@TAN-19 context values are saved without surrounding blanks', async ({ pag
   await expect(contextChips(page)).toHaveCount(2)
   await expect(contextChips(page).first()).toHaveText('Staging')
   // The chip keeps the line break typed in test data: innerText reflects the rendering, so
-  // without white-space: pre-line the two lines would read as one.
-  await expect(contextChips(page).last()).toHaveText('qa+01@example.com\ncodes WELCOME10', {
+  // without white-space: pre-line the two lines would read as one. A regex, because a
+  // string expectation collapses whitespace and would pass either way.
+  await expect(contextChips(page).last()).toHaveText(/^qa\+01@example\.com\ncodes WELCOME10$/, {
     useInnerText: true,
   })
 })
