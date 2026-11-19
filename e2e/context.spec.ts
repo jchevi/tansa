@@ -278,3 +278,104 @@ test('@TAN-19 long context values wrap', async ({ page }) => {
   }
   expect(await overflow()).toBe(0)
 })
+
+// Found in the exploratory session on the preview [TAN-19]: the examples read as values,
+// the chips had no visible names, long values broke the chips and the multi-line fields
+// could be dragged to any height.
+
+test('@TAN-19 the examples in empty fields cannot be mistaken for values', async ({ page }) => {
+  await openNewSession(page)
+
+  for (const field of [
+    exploreField(page),
+    withField(page),
+    discoverField(page),
+    environmentField(page),
+    buildField(page),
+    areasField(page),
+    testDataField(page),
+  ]) {
+    await expect(field).toHaveValue('')
+    await expect(field).toHaveAttribute('placeholder', /^e\.g\. \S/)
+  }
+})
+
+test('@TAN-19 each context value shows its name', async ({ page }) => {
+  await openNewSession(page)
+  await fillCharter(page, sampleCharter)
+  await fillContext(page, {
+    environment: 'Staging',
+    build: '1.4.2',
+    areas: 'Cart, checkout',
+    testData: 'qa+01@example.com',
+  })
+
+  await start(page)
+
+  await expect(contextTerms(page)).toHaveText([
+    'Environment',
+    'Build or version',
+    'Areas',
+    'Test data',
+  ])
+  // Shown, not only read by screen readers: a clipped 1 px term would still count as visible.
+  for (const term of await contextTerms(page).all()) {
+    await expect(term).toBeVisible()
+    const box = await term.boundingBox()
+    expect(box?.width).toBeGreaterThan(20)
+    expect(box?.height).toBeGreaterThan(10)
+  }
+})
+
+test('@TAN-19 environment, build and test data are text, areas are chips', async ({ page }) => {
+  await openNewSession(page)
+  await fillCharter(page, sampleCharter)
+  await fillContext(page, {
+    environment: 'Staging',
+    build: '1.4.2',
+    areas: 'Cart, checkout',
+    testData: 'qa+01@example.com',
+  })
+
+  await start(page)
+
+  // A term spans the whole row, so it measures the width a text value gets.
+  const row = await contextTerms(page).first().boundingBox()
+  if (!row) throw new Error('No Context term shown')
+  const width = async (index: number) => (await contextChips(page).nth(index).boundingBox())?.width
+  // Values: Staging, 1.4.2, Cart, checkout, test data.
+  for (const index of [0, 1, 4]) {
+    expect(await width(index)).toBeGreaterThan(row.width * 0.95)
+  }
+  for (const index of [2, 3]) {
+    expect(await width(index)).toBeLessThan(row.width * 0.5)
+  }
+})
+
+test('@TAN-19 multi-line fields keep a minimum and a maximum height', async ({ page }) => {
+  await openNewSession(page)
+  const manyLines = Array.from({ length: 40 }, (_, n) => `line ${String(n + 1)}`).join('\n')
+
+  for (const field of [
+    exploreField(page),
+    withField(page),
+    discoverField(page),
+    testDataField(page),
+  ]) {
+    // Dragging the resize handle sets an inline height, so the test sets one too.
+    const lineHeight = await field.evaluate((el) => parseFloat(getComputedStyle(el).lineHeight))
+    await field.evaluate((el) => {
+      el.style.height = '0px'
+    })
+    expect((await field.boundingBox())?.height).toBeGreaterThanOrEqual(lineHeight)
+
+    await field.evaluate((el) => {
+      el.style.height = '3000px'
+    })
+    expect((await field.boundingBox())?.height).toBeLessThanOrEqual(400)
+
+    await field.fill(manyLines)
+    // Past the maximum the field scrolls inside instead of growing.
+    expect(await field.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true)
+  }
+})
