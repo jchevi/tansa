@@ -35,6 +35,19 @@
     "inProgress": "A session is already in progress. Resume it or end it before starting a new one.",
     "startFailed": "The session could not be started. Try again."
   },
+  "context": {
+    "title": "Context",
+    "hint": "optional · so bugs are reproducible",
+    "environment": "Environment",
+    "build": "Build or version",
+    "areas": "Areas",
+    "areasHint": "comma-separated",
+    "testData": "Test data",
+    "environmentExample": "Staging",
+    "buildExample": "1.4.2",
+    "areasExample": "Cart, checkout",
+    "testDataExample": "Test user qa+01@example.com · codes WELCOME10, SPRING25, VIP5"
+  },
   "sbtm": {
     "charter": "Charter",
     "explore": "Explore",

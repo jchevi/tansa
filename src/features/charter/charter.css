@@ -102,6 +102,89 @@
   opacity: 1;
 }
 
+/* The optional context (mockup's Context section) [TAN-19]. The fieldset's browser
+   border, padding and min-content width are reset: they are not tokens and would stop
+   long values from wrapping. */
+.context {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.context-legend {
+  margin-bottom: 12px;
+  padding: 0;
+}
+
+.context-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.context-hint {
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.context-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.context-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.context-field-wide {
+  grid-column: 1 / -1;
+}
+
+.context-label {
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+/* Same boundary as the charter fields: 1 px --color-muted, checked at 3:1. */
+.context-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--color-muted);
+  border-radius: 14px;
+  background: var(--color-card);
+  color: var(--color-ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+}
+
+.context-input-build {
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+
+.context-textarea {
+  padding: 10px 14px;
+  line-height: 1.5;
+  resize: vertical;
+  overflow-wrap: anywhere;
+}
+
+.context-input::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
+}
+
 .charter-footer {
   display: flex;
   flex-wrap: wrap;
@@ -166,7 +249,8 @@
 }
 
 @media (max-width: 560px) {
-  .charter-fields {
+  .charter-fields,
+  .context-fields {
     grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { Session } from '../../data'
 import type { SessionInProgress } from '../shell/useSessionInProgress'
 import './session.css'
 
@@ -27,6 +28,59 @@ export function SessionScreen({ inProgress }: { inProgress: SessionInProgress | 
           </dl>
         </section>
       )}
+      {inProgress && <ContextChips session={inProgress.session} />}
     </main>
+  )
+}
+
+// The context as chips [TAN-19]: each chip is a <dd>, and its field name is a <dt> read by
+// screen readers but not shown, as in the mockup. One chip per area. Nothing is rendered
+// for a session without context.
+function ContextChips({ session }: { session: Session }) {
+  const { t } = useTranslation()
+  const { environment, build, areas, testData } = session
+  if (
+    environment === undefined &&
+    build === undefined &&
+    areas.length === 0 &&
+    testData === undefined
+  ) {
+    return null
+  }
+
+  return (
+    <section aria-label={t('context.title')} className="session-context">
+      <dl className="session-context-list">
+        {environment !== undefined && (
+          <>
+            <dt className="visually-hidden">{t('context.environment')}</dt>
+            <dd className="session-chip">{environment}</dd>
+          </>
+        )}
+        {build !== undefined && (
+          <>
+            <dt className="visually-hidden">{t('context.build')}</dt>
+            <dd className="session-chip session-chip-build">{build}</dd>
+          </>
+        )}
+        {areas.length > 0 && (
+          <>
+            <dt className="visually-hidden">{t('context.areas')}</dt>
+            {areas.map((area, index) => (
+              // Areas may repeat, so the index keeps the keys unique.
+              <dd key={`${String(index)}-${area}`} className="session-chip">
+                {area}
+              </dd>
+            ))}
+          </>
+        )}
+        {testData !== undefined && (
+          <>
+            <dt className="visually-hidden">{t('context.testData')}</dt>
+            <dd className="session-chip">{testData}</dd>
+          </>
+        )}
+      </dl>
+    </section>
   )
 }

@@ -162,8 +162,11 @@ test('@TAN-19 context values are saved without surrounding blanks', async ({ pag
   expect(session.testData).toBe('qa+01@example.com\ncodes WELCOME10')
   await expect(contextChips(page)).toHaveCount(2)
   await expect(contextChips(page).first()).toHaveText('Staging')
-  // The chip keeps the line break typed in test data.
-  expect(await contextChips(page).last().innerText()).toBe('qa+01@example.com\ncodes WELCOME10')
+  // The chip keeps the line break typed in test data: innerText reflects the rendering, so
+  // without white-space: pre-line the two lines would read as one.
+  await expect(contextChips(page).last()).toHaveText('qa+01@example.com\ncodes WELCOME10', {
+    useInnerText: true,
+  })
 })
 
 test('@TAN-19 Enter in a one-line context field does not start the session', async ({ page }) => {

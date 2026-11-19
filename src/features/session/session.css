@@ -1,5 +1,8 @@
 /* Session screen: the charter for now [TAN-18]; the timer arrives with TAN-21. */
 .session {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   max-width: 780px;
   margin: 0 auto;
 }
@@ -43,6 +46,35 @@
   /* Keep line breaks typed in the charter, and wrap long unbroken words. */
   white-space: pre-line;
   overflow-wrap: anywhere;
+}
+
+/* Context chips (mockup: under the charter) [TAN-19]. The hairline outline is decorative:
+   the text identifies the chip. Muted on card is a checked text pair. */
+.session-context-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.session-chip {
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 4px 12px;
+  border-radius: 14px;
+  background: var(--color-card);
+  box-shadow: 0 0 0 1px var(--color-hair);
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  /* Keep line breaks typed in test data, and wrap long unbroken words. */
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.session-chip-build {
+  font-family: var(--font-mono);
 }
 
 .session-charter-explore {
