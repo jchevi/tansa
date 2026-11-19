@@ -1,4 +1,13 @@
-import type { Page } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
+import { mainNavigation } from './nav.ts'
+
+// New session through the "+" link, as the TAN-18 ticket describes it.
+export async function openNewSession(page: Page): Promise<void> {
+  await page.goto('/history')
+  await expect(mainNavigation(page)).toBeVisible()
+  await page.getByRole('link', { name: 'New session', exact: true }).click()
+  await expect(page).toHaveURL(/\/new$/)
+}
 
 // The New session form, located by what a user sees: labels, the button name and the
 // status line under the form [TAN-18].
