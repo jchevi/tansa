@@ -340,15 +340,16 @@ test('@TAN-19 environment, build and test data are text, areas are chips', async
   await start(page)
 
   // A term spans the whole row, so it measures the width a text value gets.
-  const row = await contextTerms(page).first().boundingBox()
-  if (!row) throw new Error('No Context term shown')
-  const width = async (index: number) => (await contextChips(page).nth(index).boundingBox())?.width
+  const rowWidth = (await contextTerms(page).first().boundingBox())?.width ?? 0
+  expect(rowWidth).toBeGreaterThan(200)
+  const width = async (index: number) =>
+    (await contextChips(page).nth(index).boundingBox())?.width ?? 0
   // Values: Staging, 1.4.2, Cart, checkout, test data.
   for (const index of [0, 1, 4]) {
-    expect(await width(index)).toBeGreaterThan(row.width * 0.95)
+    expect(await width(index)).toBeGreaterThan(rowWidth * 0.95)
   }
   for (const index of [2, 3]) {
-    expect(await width(index)).toBeLessThan(row.width * 0.5)
+    expect(await width(index)).toBeLessThan(rowWidth * 0.5)
   }
 })
 
