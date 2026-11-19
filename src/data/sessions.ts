@@ -5,6 +5,7 @@ import type {
   NewSession,
   Session,
   SessionPatch,
+  SessionContext,
   SessionStatus,
   StartedSession,
   TimeSegment,
@@ -25,7 +26,12 @@ const DEFAULT_TARGET_MINUTES = 60
 // session already in progress runs inside the same transaction: IndexedDB runs
 // overlapping readwrite transactions on a store one after the other, so a second tab or a
 // double click cannot slip a second session in between the check and the write.
-export async function startSession(db: TansaDb, charter: Charter): Promise<StartedSession> {
+// The context is stored as given; the screen trims it and leaves out blank fields.
+export async function startSession(
+  db: TansaDb,
+  charter: Charter,
+  context: SessionContext = { areas: [] },
+): Promise<StartedSession> {
   const tx = db.transaction(['sessions', 'timeSegments'], 'readwrite')
   const sessions = await tx.objectStore('sessions').getAll()
   const current = sessions.find((stored) => isInProgress(stored.status))
@@ -37,7 +43,12 @@ export async function startSession(db: TansaDb, charter: Charter): Promise<Start
     id: crypto.randomUUID(),
     status: 'running',
     charter,
-    areas: [],
+    // A copy, so the caller changing its array later cannot change the returned session.
+    areas: [...context.areas],
+    // Only the keys that are present: a blank field is no key, not "" [TAN-19].
+    ...(context.environment !== undefined && { environment: context.environment }),
+    ...(context.build !== undefined && { build: context.build }),
+    ...(context.testData !== undefined && { testData: context.testData }),
     targetMinutes: DEFAULT_TARGET_MINUTES,
     createdAt: now,
   }

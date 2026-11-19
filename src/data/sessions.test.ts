@@ -217,6 +217,41 @@ describe('startSession', () => {
     expect(await db.count('timeSegments')).toBe(1)
   })
 
+  it('@TAN-19 stores the given context with the session', async () => {
+    const context = {
+      environment: 'Staging',
+      build: '1.4.2',
+      areas: ['Cart', 'checkout'],
+      testData: 'qa+01@example.com',
+    }
+
+    const { session } = await startSession(db, charter, context)
+
+    expect(await getSession(db, session.id)).toMatchObject(context)
+  })
+
+  it.each([
+    ['no context', undefined],
+    ['an empty context', { areas: [] }],
+  ])('@TAN-19 with %s stores no optional context keys', async (_label, context) => {
+    const { session } = await startSession(db, charter, context)
+
+    const stored = await getSession(db, session.id)
+    expect(stored?.areas).toEqual([])
+    expect(stored).not.toHaveProperty('environment')
+    expect(stored).not.toHaveProperty('build')
+    expect(stored).not.toHaveProperty('testData')
+  })
+
+  it("@TAN-19 the stored areas are not the caller's array", async () => {
+    const areas = ['Cart']
+
+    const { session } = await startSession(db, charter, { areas })
+    areas.push('checkout')
+
+    expect(session.areas).toEqual(['Cart'])
+  })
+
   it('@TAN-18 two starts at once leave a single session in progress', async () => {
     const results = await Promise.allSettled([startSession(db, charter), startSession(db, charter)])
 

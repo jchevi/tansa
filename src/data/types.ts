@@ -59,6 +59,15 @@ export interface TimeSegment {
   endedAt?: number
 }
 
+// The optional context a session starts with (spec R1, US-02). A key that is absent was
+// left blank; areas is always a list, maybe empty [TAN-19].
+export interface SessionContext {
+  areas: string[]
+  build?: string
+  environment?: string
+  testData?: string
+}
+
 // What startSession writes: the session and its first, open, running segment.
 export interface StartedSession {
   session: Session

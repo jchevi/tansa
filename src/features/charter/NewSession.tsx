@@ -1,10 +1,11 @@
-import { useId, useState, type SyntheticEvent } from 'react'
+import { useId, useState, type KeyboardEvent, type SyntheticEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SessionInProgressError, startSession, type Charter, type TansaDb } from '../../data'
 import { Link } from '../shell/Link'
 import { navigate } from '../shell/router'
 import { routes } from '../shell/routes'
 import { charterFields, missingCharterFields, trimCharter, type CharterField } from './charter'
+import { emptyContextForm, toSessionContext, type ContextForm } from './context'
 import './charter.css'
 
 type StartState = 'idle' | 'starting' | 'failed'
@@ -27,7 +28,15 @@ const fieldText = {
   },
 } as const
 
-// New session (spec R1, US-01): the charter form. With a session already in progress it
+// In a form, Enter in a one-line field submits it. Typing "Staging" and Enter would start
+// the session and its time, so the one-line context fields swallow Enter; the button and
+// the textareas keep theirs. Not while an IME is composing: there Enter confirms the text
+// [TAN-19].
+function keepEnterFromSubmitting(event: KeyboardEvent<HTMLInputElement>) {
+  if (event.key === 'Enter' && !event.nativeEvent.isComposing) event.preventDefault()
+}
+
+// New session (spec R1, US-01, US-02): the charter form and its optional context. With a session already in progress it
 // shows a notice instead, so only one session runs at a time [TAN-18].
 export function NewSession({
   db,
@@ -76,7 +85,10 @@ function CharterForm({
   onSessionInProgress: () => void
 }) {
   const { t, i18n } = useTranslation()
+  // Examples start with "e.g." so an empty field is never read as a filled one [TAN-19].
+  const example = (text: string) => t('field.example', { example: text })
   const [charter, setCharter] = useState<Charter>(emptyCharter)
+  const [context, setContext] = useState<ContextForm>(emptyContextForm)
   const [start, setStart] = useState<StartState>('idle')
   const id = useId()
   const statusId = `${id}-status`
@@ -94,7 +106,7 @@ function CharterForm({
     if (missingCharterFields(charter).length > 0 || start === 'starting') return
     setStart('starting')
     try {
-      await startSession(db, trimCharter(charter))
+      await startSession(db, trimCharter(charter), toSessionContext(context))
       navigate(routes.session)
     } catch (error) {
       if (error instanceof SessionInProgressError) {
@@ -109,6 +121,10 @@ function CharterForm({
 
   function update(field: CharterField, value: string) {
     setCharter((current) => ({ ...current, [field]: value }))
+  }
+
+  function updateContext(field: keyof ContextForm, value: string) {
+    setContext((current) => ({ ...current, [field]: value }))
   }
 
   return (
@@ -131,7 +147,7 @@ function CharterForm({
                 className="charter-input"
                 rows={field === 'explore' ? 1 : 2}
                 value={charter[field]}
-                placeholder={t(fieldText[field].example)}
+                placeholder={example(t(fieldText[field].example))}
                 onChange={(event) => {
                   update(field, event.target.value)
                 }}
@@ -140,6 +156,78 @@ function CharterForm({
           )
         })}
       </div>
+      {/* Optional: never read by the Start check. Always open (decision of 2026-11-19). */}
+      <fieldset className="context">
+        <legend className="context-legend">
+          <span className="context-title">{t('context.title')}</span>{' '}
+          <span className="context-hint">{t('context.hint')}</span>
+        </legend>
+        <div className="context-fields">
+          <div className="context-field">
+            <label htmlFor={`${id}-environment`} className="context-label">
+              {t('context.environment')}
+            </label>
+            <input
+              id={`${id}-environment`}
+              type="text"
+              className="context-input"
+              value={context.environment}
+              placeholder={example(t('context.environmentExample'))}
+              onKeyDown={keepEnterFromSubmitting}
+              onChange={(event) => {
+                updateContext('environment', event.target.value)
+              }}
+            />
+          </div>
+          <div className="context-field">
+            <label htmlFor={`${id}-build`} className="context-label">
+              {t('context.build')}
+            </label>
+            <input
+              id={`${id}-build`}
+              type="text"
+              className="context-input context-input-build"
+              value={context.build}
+              placeholder={example(t('context.buildExample'))}
+              onKeyDown={keepEnterFromSubmitting}
+              onChange={(event) => {
+                updateContext('build', event.target.value)
+              }}
+            />
+          </div>
+          <div className="context-field context-field-wide">
+            <label htmlFor={`${id}-areas`} className="context-label">
+              {t('context.areas')} <span className="context-hint">· {t('context.areasHint')}</span>
+            </label>
+            <input
+              id={`${id}-areas`}
+              type="text"
+              className="context-input"
+              value={context.areas}
+              placeholder={example(t('context.areasExample'))}
+              onKeyDown={keepEnterFromSubmitting}
+              onChange={(event) => {
+                updateContext('areas', event.target.value)
+              }}
+            />
+          </div>
+          <div className="context-field context-field-wide">
+            <label htmlFor={`${id}-testData`} className="context-label">
+              {t('context.testData')}
+            </label>
+            <textarea
+              id={`${id}-testData`}
+              className="context-input context-textarea"
+              rows={2}
+              value={context.testData}
+              placeholder={example(t('context.testDataExample'))}
+              onChange={(event) => {
+                updateContext('testData', event.target.value)
+              }}
+            />
+          </div>
+        </div>
+      </fieldset>
       <div className="charter-footer">
         {start === 'failed' && (
           <p role="alert" className="charter-error">

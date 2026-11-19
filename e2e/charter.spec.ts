@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { contrastRatio } from '../src/theme/contrast.ts'
+import { expectVisibleBoundary } from './support/boundary.ts'
 import {
   charterSection,
   charterStatus,
@@ -7,26 +7,19 @@ import {
   exploreField,
   fillCharter,
   inProgressNotice,
+  openNewSession,
   sampleCharter,
   startButton,
   withField,
   type CharterValues,
 } from './support/charter.ts'
-import { compositeToHex, parseCssColor } from './support/color.ts'
+import { areasField, buildField, environmentField, testDataField } from './support/context.ts'
 import { readSessions, readTimeSegments } from './support/db.ts'
 import { mainButton, mainNavigation } from './support/nav.ts'
 import { seedSession, type SeedSession } from './support/seed.ts'
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 const MINUTE = 60_000
-
-// New session through the "+" link, as the ticket describes it.
-async function openNewSession(page: Page) {
-  await page.goto('/history')
-  await expect(mainNavigation(page)).toBeVisible()
-  await page.getByRole('link', { name: 'New session', exact: true }).click()
-  await expect(page).toHaveURL(/\/new$/)
-}
 
 // The app creates the database on its first load, so seed after it, then reload.
 async function seedAndReload(page: Page, seed: SeedSession) {
@@ -162,6 +155,16 @@ test('@TAN-18 the charter can be filled and started with the keyboard', async ({
   await page.keyboard.press('Tab')
   await expect(discoverField(page)).toBeFocused()
   await page.keyboard.type('items lost between devices')
+  // The optional Context fields come next, in this order, then the button [TAN-19].
+  for (const field of [
+    environmentField(page),
+    buildField(page),
+    areasField(page),
+    testDataField(page),
+  ]) {
+    await page.keyboard.press('Tab')
+    await expect(field).toBeFocused()
+  }
   await page.keyboard.press('Tab')
   await expect(startButton(page)).toBeFocused()
 
@@ -275,28 +278,7 @@ test('@TAN-18 charter fields have a visible boundary', async ({ page }) => {
   await openNewSession(page)
 
   for (const field of [exploreField(page), withField(page), discoverField(page)]) {
-    const colors = await field.evaluate((element) => {
-      // The first ancestor (or the field itself) with a painted background is what the
-      // border is seen against.
-      let behind: Element | null = element
-      while (behind) {
-        const background = getComputedStyle(behind).backgroundColor
-        if (background !== 'rgba(0, 0, 0, 0)' && background !== 'transparent') {
-          return {
-            border: getComputedStyle(element).borderTopColor,
-            width: parseFloat(getComputedStyle(element).borderTopWidth),
-            behind: background,
-          }
-        }
-        behind = behind.parentElement
-      }
-      throw new Error('No painted background behind the field')
-    })
-    const behind = parseCssColor(colors.behind)
-    expect(behind.a).toBe(1)
-    const border = compositeToHex(parseCssColor(colors.border), behind)
-    expect(colors.width).toBeGreaterThanOrEqual(1)
-    expect(contrastRatio(border, compositeToHex(behind, behind))).toBeGreaterThanOrEqual(3)
+    await expectVisibleBoundary(field)
   }
 })
 
