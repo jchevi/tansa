@@ -32,20 +32,6 @@ time {
   outline-offset: 2px;
 }
 
-/* Read by screen readers, not shown: clipped, never display: none, which would also hide
-   it from the accessibility tree [TAN-19]. */
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
-}
-
 /* Page frame only: each screen sets its own column width. */
 main {
   min-height: 100vh;

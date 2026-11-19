@@ -48,15 +48,56 @@
   overflow-wrap: anywhere;
 }
 
-/* Context chips (mockup: under the charter) [TAN-19]. The hairline outline is decorative:
-   the text identifies the chip. Muted on card is a checked text pair. */
+/* The context card [TAN-19]: each name on its own row, like the charter's. Areas are
+   chips that wrap; the other values are text rows, since they can be long. */
+.session-context {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px;
+  border-radius: 24px 24px 24px 6px;
+  background: var(--color-card);
+  box-shadow: inset 0 0 0 1px var(--color-hair);
+}
+
 .session-context-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px 8px;
   margin: 0;
 }
 
+.session-context-list dt {
+  flex-basis: 100%;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent-strong);
+}
+
+.session-context-list dd + dt {
+  margin-top: 8px;
+}
+
+.session-context-text {
+  flex-basis: 100%;
+  min-width: 0;
+  margin: 0;
+  color: var(--color-ink);
+  line-height: 1.5;
+  /* Keep line breaks typed in test data, and wrap long unbroken words. */
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.session-context-build {
+  font-family: var(--font-mono);
+}
+
+/* The hairline outline is decorative: the text identifies the chip. Muted on card is a
+   checked text pair. */
 .session-chip {
   min-width: 0;
   max-width: 100%;
@@ -68,13 +109,7 @@
   color: var(--color-muted);
   font-size: 13px;
   line-height: 1.5;
-  /* Keep line breaks typed in test data, and wrap long unbroken words. */
-  white-space: pre-line;
   overflow-wrap: anywhere;
-}
-
-.session-chip-build {
-  font-family: var(--font-mono);
 }
 
 .session-charter-explore {

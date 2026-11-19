@@ -85,6 +85,8 @@ function CharterForm({
   onSessionInProgress: () => void
 }) {
   const { t, i18n } = useTranslation()
+  // Examples start with "e.g." so an empty field is never read as a filled one [TAN-19].
+  const example = (text: string) => t('field.example', { example: text })
   const [charter, setCharter] = useState<Charter>(emptyCharter)
   const [context, setContext] = useState<ContextForm>(emptyContextForm)
   const [start, setStart] = useState<StartState>('idle')
@@ -145,7 +147,7 @@ function CharterForm({
                 className="charter-input"
                 rows={field === 'explore' ? 1 : 2}
                 value={charter[field]}
-                placeholder={t(fieldText[field].example)}
+                placeholder={example(t(fieldText[field].example))}
                 onChange={(event) => {
                   update(field, event.target.value)
                 }}
@@ -170,7 +172,7 @@ function CharterForm({
               type="text"
               className="context-input"
               value={context.environment}
-              placeholder={t('context.environmentExample')}
+              placeholder={example(t('context.environmentExample'))}
               onKeyDown={keepEnterFromSubmitting}
               onChange={(event) => {
                 updateContext('environment', event.target.value)
@@ -186,7 +188,7 @@ function CharterForm({
               type="text"
               className="context-input context-input-build"
               value={context.build}
-              placeholder={t('context.buildExample')}
+              placeholder={example(t('context.buildExample'))}
               onKeyDown={keepEnterFromSubmitting}
               onChange={(event) => {
                 updateContext('build', event.target.value)
@@ -202,7 +204,7 @@ function CharterForm({
               type="text"
               className="context-input"
               value={context.areas}
-              placeholder={t('context.areasExample')}
+              placeholder={example(t('context.areasExample'))}
               onKeyDown={keepEnterFromSubmitting}
               onChange={(event) => {
                 updateContext('areas', event.target.value)
@@ -218,7 +220,7 @@ function CharterForm({
               className="context-input context-textarea"
               rows={2}
               value={context.testData}
-              placeholder={t('context.testDataExample')}
+              placeholder={example(t('context.testDataExample'))}
               onChange={(event) => {
                 updateContext('testData', event.target.value)
               }}

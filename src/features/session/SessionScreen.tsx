@@ -28,16 +28,18 @@ export function SessionScreen({ inProgress }: { inProgress: SessionInProgress | 
           </dl>
         </section>
       )}
-      {inProgress && <ContextChips session={inProgress.session} />}
+      {inProgress && <ContextDetails session={inProgress.session} />}
     </main>
   )
 }
 
-// The context as chips [TAN-19]: each chip is a <dd>, and its field name is a <dt> read by
-// screen readers but not shown, as in the mockup. One chip per area. Nothing is rendered
+// The context [TAN-19], under the charter: each value under its visible name. Areas are
+// chips, one per area; environment, build and test data are text, because they can be long
+// (a URL, several lines of test data) and a chip is for a short tag. Nothing is rendered
 // for a session without context.
-function ContextChips({ session }: { session: Session }) {
+function ContextDetails({ session }: { session: Session }) {
   const { t } = useTranslation()
+  const headingId = useId()
   const { environment, build, areas, testData } = session
   if (
     environment === undefined &&
@@ -49,23 +51,26 @@ function ContextChips({ session }: { session: Session }) {
   }
 
   return (
-    <section aria-label={t('context.title')} className="session-context">
+    <section aria-labelledby={headingId} className="session-context">
+      <h2 id={headingId} className="session-charter-title">
+        {t('context.title')}
+      </h2>
       <dl className="session-context-list">
         {environment !== undefined && (
           <>
-            <dt className="visually-hidden">{t('context.environment')}</dt>
-            <dd className="session-chip">{environment}</dd>
+            <dt>{t('context.environment')}</dt>
+            <dd className="session-context-text">{environment}</dd>
           </>
         )}
         {build !== undefined && (
           <>
-            <dt className="visually-hidden">{t('context.build')}</dt>
-            <dd className="session-chip session-chip-build">{build}</dd>
+            <dt>{t('context.build')}</dt>
+            <dd className="session-context-text session-context-build">{build}</dd>
           </>
         )}
         {areas.length > 0 && (
           <>
-            <dt className="visually-hidden">{t('context.areas')}</dt>
+            <dt>{t('context.areas')}</dt>
             {areas.map((area, index) => (
               // Areas may repeat, so the index keeps the keys unique.
               <dd key={`${String(index)}-${area}`} className="session-chip">
@@ -76,8 +81,8 @@ function ContextChips({ session }: { session: Session }) {
         )}
         {testData !== undefined && (
           <>
-            <dt className="visually-hidden">{t('context.testData')}</dt>
-            <dd className="session-chip">{testData}</dd>
+            <dt>{t('context.testData')}</dt>
+            <dd className="session-context-text">{testData}</dd>
           </>
         )}
       </dl>

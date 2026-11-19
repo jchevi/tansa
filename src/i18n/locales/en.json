@@ -21,6 +21,9 @@
   "errors": {
     "storage": "TANSA could not open its local storage. Allow site data for this page in your browser settings, then reload."
   },
+  "field": {
+    "example": "e.g. {{example}}"
+  },
   "charter": {
     "lead": "What will you explore?",
     "exploreHint": "the area or feature",

@@ -89,9 +89,15 @@
   font-size: 16px;
   line-height: 1.5;
   overflow-wrap: anywhere;
+  /* The resize handle stops at two lines and at ten; past ten the field scrolls inside.
+     18px is the padding and the border [TAN-19]. */
+  min-height: calc(2lh + 18px);
+  max-height: calc(10lh + 18px);
+  overflow-y: auto;
 }
 
 .charter-card-explore .charter-input {
+  min-height: calc(1lh + 18px);
   font-family: var(--font-display);
   font-size: 22px;
   font-weight: 700;
@@ -173,10 +179,15 @@
   font-size: 14px;
 }
 
+/* Like the charter fields: two to ten lines, then it scrolls. 22px is the padding and
+   the border. */
 .context-textarea {
+  min-height: calc(2lh + 22px);
+  max-height: calc(10lh + 22px);
   padding: 10px 14px;
   line-height: 1.5;
   resize: vertical;
+  overflow-y: auto;
   overflow-wrap: anywhere;
 }
 
