@@ -17,6 +17,10 @@ export const discoverField = (page: Page) => page.getByRole('textbox', { name: '
 
 export const startButton = (page: Page) => page.getByRole('button', { name: 'Start session' })
 
+// The Start button by its full accessible name, which carries the chosen duration [TAN-20].
+export const startButtonNamed = (page: Page, minutes: number) =>
+  page.getByRole('button', { name: `Start session · ${String(minutes)} min`, exact: true })
+
 export const charterStatus = (page: Page) => page.getByRole('status')
 
 export const inProgressNotice = (page: Page) =>

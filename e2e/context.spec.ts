@@ -22,6 +22,7 @@ import {
   testDataField,
 } from './support/context.ts'
 import { readSessions } from './support/db.ts'
+import { durationOption } from './support/duration.ts'
 
 async function start(page: Page) {
   await startButton(page).click()
@@ -210,6 +211,9 @@ test('@TAN-19 the context can be filled with the keyboard', async ({ page }) => 
   await page.keyboard.press('Tab')
   await expect(discoverField(page)).toBeFocused()
   await page.keyboard.type(sampleCharter.discover)
+  // The Duration group is one stop, on the checked radio [TAN-20].
+  await page.keyboard.press('Tab')
+  await expect(durationOption(page, 60)).toBeFocused()
 
   const steps = [
     { field: environmentField(page), value: 'Staging' },
