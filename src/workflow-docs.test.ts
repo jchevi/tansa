@@ -48,6 +48,74 @@ describe('workflow docs', () => {
     }
   })
 
+  // Step 2's own line and its indented sub-lines, up to step 3 [TAN-80].
+  function stepBlock(step: number): string[] {
+    const lines = lifecycle.split(/\r?\n/)
+    const start = lines.findIndex((l) => l.startsWith(`${String(step)}. `))
+    const end = lines.findIndex((l) => l.startsWith(`${String(step + 1)}. `))
+    expect(start).toBeGreaterThan(-1)
+    expect(end).toBeGreaterThan(start)
+    return lines.slice(start, end)
+  }
+  const qaSections = [
+    'Charters',
+    'Risks',
+    'Test data',
+    'Oracles',
+    'Coverage matrix',
+    'Already automated',
+  ]
+  const qaPackLine = () => stepBlock(2).find((l) => l.startsWith('   - QA pack'))
+
+  // The pack is committed before the code review, because gate-pr allows a merge only
+  // when HEAD has been reviewed; tasks skip QA, so only stories have one [TAN-80].
+  it("@TAN-80 lifecycle step 2 commits the story's QA pack before the code review", () => {
+    const [stepLine = ''] = stepBlock(2)
+    const pack = stepLine.indexOf('stories also commit their QA pack')
+    const review = stepLine.indexOf('/review-loop code')
+    expect(pack).toBeGreaterThan(-1)
+    expect(review).toBeGreaterThan(pack)
+    const subLine = qaPackLine()
+    expect(subLine).toBeDefined()
+    expect(subLine?.startsWith('   - QA pack (stories):')).toBe(true)
+    for (const text of [
+      '`docs/qa/TAN-<n>.md`',
+      'written before the code review',
+      'Not scripted cases',
+      'how keyboard focus moves',
+    ]) {
+      expect(subLine).toContain(text)
+    }
+  })
+
+  it.each(qaSections)('@TAN-80 the lifecycle lists the QA pack section "%s"', (name) => {
+    expect(qaPackLine()).toContain(`**${name}**`)
+  })
+
+  it('@TAN-80 lifecycle step 3 runs the session with its QA pack', () => {
+    const line = lifecycle.split(/\r?\n/).find((l) => l.startsWith('3. '))
+    expect(line).toContain('with its QA pack')
+  })
+
+  it('@TAN-80 a Process row explains the QA pack', () => {
+    const row = section(decisions, 'Process')
+      .split(/\r?\n/)
+      .find((l) => l.includes('`docs/qa/TAN-<n>.md`'))
+    expect(row).toMatch(/^\| 2026-11-20 \|/)
+    const why = row?.split(' | ').at(-1) ?? ''
+    for (const text of ['not scripted cases', 'what tests cannot judge', '`gate-pr`']) {
+      expect(why).toContain(text)
+    }
+  })
+
+  // The trial pack is the example the next session copies, so it keeps every section.
+  it.each(qaSections)('@TAN-80 the TAN-20 QA pack has the section "%s"', (name) => {
+    const headings = read('../docs/qa/TAN-20.md')
+      .split(/\r?\n/)
+      .filter((l) => l.startsWith('## '))
+    expect(headings.some((h) => h.startsWith(`## ${name}`))).toBe(true)
+  })
+
   it('@TAN-28 CLAUDE.md and the decision log agree on merge commits', () => {
     expect(lifecycle).toContain('Merge with a merge commit (the only method the repo allows)')
     const decision = decisions.split(/\r?\n/).find((l) => l.includes('Merge commits only'))

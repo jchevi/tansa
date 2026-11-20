@@ -41,8 +41,9 @@ It is built by one person (a senior QA engineer, intermediate programmer) as a p
 
 ## Ticket lifecycle
 1. Move the ticket to **In Progress** (WIP limit 1) and branch from an up-to-date `main`: `TAN-<n>-short-slug`.
-2. Commit with Conventional Commits and the key; run `/review-loop code` until it is clean; open the PR (key in the title, criteria and the review line in the body).
-3. Stories: when CI is green and the preview is deployed, move the ticket to **QA** and run the exploratory session on the preview. Bugs found send it back to In Progress; their fixes go through `/review-loop code` again.
+2. Commit with Conventional Commits and the key; stories also commit their QA pack; run `/review-loop code` until it is clean; open the PR (key in the title, criteria and the review line in the body).
+   - QA pack (stories): `docs/qa/TAN-<n>.md`, written before the code review so the reviewed HEAD is the merged one. Not scripted cases (the criteria are in CI) but prep for the exploratory session. Sections: **Charters** (1–3, Explore / With / To discover, each on a real risk); **Risks** the tests do not cover (layout, long or Unicode text, how keyboard focus moves, reload mid-flow, reduce motion, dark mode once it exists, earlier features); **Test data** (fictional, ready to paste: empty, whitespace-only, very long, emoji, RTL); **Oracles** (what should be true and its source; none means an Issue, not a Bug); **Coverage matrix** (criteria × Chrome/Edge, viewport, theme); **Already automated** (test titles).
+3. Stories: when CI is green and the preview is deployed, move the ticket to **QA** and run the exploratory session on the preview with its QA pack. Bugs found send it back to In Progress; their fixes go through `/review-loop code` again.
 4. Merge with a merge commit (the only method the repo allows), once the owner approves.
 5. Delete the branch. GitHub deletes the remote branch on merge; delete the local one with `git branch -d`.
 6. Move the ticket to **Done**.
