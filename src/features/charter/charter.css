@@ -108,6 +108,74 @@
   opacity: 1;
 }
 
+/* The time-box (mockup's Duration section) [TAN-20]. The fieldset's browser border and
+   padding are reset, as for Context. */
+.duration {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.duration-legend {
+  margin-bottom: 12px;
+  padding: 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.duration-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* The pill is the label; the radio covers it, transparent, so it stays focusable,
+   clickable and in the accessibility tree. The unselected border is the input border
+   (--color-muted, 3:1); the selected one is 2 px --color-accent-strong (3:1 on the tint
+   and on bg) with weight 500, so the state is never color alone. */
+.duration-option {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 20px;
+  border: 1px solid var(--color-muted);
+  border-radius: 22px 22px 22px 6px;
+  background: var(--color-card);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.duration-option:has(:checked) {
+  /* One pixel less padding keeps the text still when the border grows. */
+  padding: 0 19px;
+  border: 2px solid var(--color-accent-strong);
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  font-weight: 500;
+}
+
+.duration-option:has(:focus-visible) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.duration-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
 /* The optional context (mockup's Context section) [TAN-19]. The fieldset's browser
    border, padding and min-content width are reset: they are not tokens and would stop
    long values from wrapping. */
@@ -233,6 +301,20 @@
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
+}
+
+/* All the labels share one cell; the widest sets the button's width [TAN-20]. */
+.charter-start-labels {
+  display: inline-grid;
+}
+
+.charter-start-label {
+  grid-area: 1 / 1;
+  text-align: center;
+}
+
+.charter-start-label[data-current='false'] {
+  visibility: hidden;
 }
 
 .charter-start:disabled {

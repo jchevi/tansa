@@ -1,6 +1,14 @@
 import { useId, useState, type KeyboardEvent, type SyntheticEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { SessionInProgressError, startSession, type Charter, type TansaDb } from '../../data'
+import {
+  DEFAULT_TARGET_MINUTES,
+  SessionInProgressError,
+  startSession,
+  TARGET_MINUTE_OPTIONS,
+  type Charter,
+  type TansaDb,
+  type TargetMinutes,
+} from '../../data'
 import { Link } from '../shell/Link'
 import { navigate } from '../shell/router'
 import { routes } from '../shell/routes'
@@ -28,10 +36,11 @@ const fieldText = {
   },
 } as const
 
-// In a form, Enter in a one-line field submits it. Typing "Staging" and Enter would start
-// the session and its time, so the one-line context fields swallow Enter; the button and
-// the textareas keep theirs. Not while an IME is composing: there Enter confirms the text
-// [TAN-19].
+// In a form, Enter in a one-line field or on a radio submits it. Typing "Staging" and
+// Enter, or Enter while choosing 90 min, would start the session and its time, so the
+// one-line context fields and the duration radios swallow Enter; the button and the
+// textareas keep theirs. Not while an IME is composing: there Enter confirms the text
+// [TAN-19, TAN-20].
 function keepEnterFromSubmitting(event: KeyboardEvent<HTMLInputElement>) {
   if (event.key === 'Enter' && !event.nativeEvent.isComposing) event.preventDefault()
 }
@@ -89,6 +98,7 @@ function CharterForm({
   const example = (text: string) => t('field.example', { example: text })
   const [charter, setCharter] = useState<Charter>(emptyCharter)
   const [context, setContext] = useState<ContextForm>(emptyContextForm)
+  const [targetMinutes, setTargetMinutes] = useState<TargetMinutes>(DEFAULT_TARGET_MINUTES)
   const [start, setStart] = useState<StartState>('idle')
   const id = useId()
   const statusId = `${id}-status`
@@ -106,7 +116,11 @@ function CharterForm({
     if (missingCharterFields(charter).length > 0 || start === 'starting') return
     setStart('starting')
     try {
-      await startSession(db, trimCharter(charter), toSessionContext(context))
+      await startSession(db, {
+        charter: trimCharter(charter),
+        context: toSessionContext(context),
+        targetMinutes,
+      })
       navigate(routes.session)
     } catch (error) {
       if (error instanceof SessionInProgressError) {
@@ -156,6 +170,29 @@ function CharterForm({
           )
         })}
       </div>
+      {/* Native radios: one Tab stop, arrow keys, "2 of 4" and a single checked option come
+          from the browser. Always one checked, so the Start check never reads it [TAN-20]. */}
+      <fieldset className="duration">
+        <legend className="duration-legend">{t('duration.title')}</legend>
+        <div className="duration-options">
+          {TARGET_MINUTE_OPTIONS.map((minutes) => (
+            <label key={minutes} className="duration-option">
+              <input
+                type="radio"
+                name={`${id}-duration`}
+                value={minutes}
+                className="duration-input"
+                checked={targetMinutes === minutes}
+                onKeyDown={keepEnterFromSubmitting}
+                onChange={() => {
+                  setTargetMinutes(minutes)
+                }}
+              />
+              {t('duration.option', { minutes })}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       {/* Optional: never read by the Start check. Always open (decision of 2026-11-19). */}
       <fieldset className="context">
         <legend className="context-legend">
@@ -243,7 +280,21 @@ function CharterForm({
           disabled={missing.length > 0 || start === 'starting'}
           aria-describedby={statusId}
         >
-          {t('charter.start')}
+          {/* Every label sits in the same grid cell and only the chosen one is visible, so
+              the button is always as wide as the longest label and does not change size
+              when the duration changes. Hidden labels are not part of the name [TAN-20]. */}
+          <span className="charter-start-labels">
+            {TARGET_MINUTE_OPTIONS.map((minutes) => (
+              <span
+                key={minutes}
+                className="charter-start-label"
+                data-current={minutes === targetMinutes}
+                aria-hidden={minutes !== targetMinutes}
+              >
+                {t('charter.start', { minutes })}
+              </span>
+            ))}
+          </span>
           <span aria-hidden="true"> →</span>
         </button>
       </div>

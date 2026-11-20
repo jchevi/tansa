@@ -15,6 +15,7 @@ import {
 } from './support/charter.ts'
 import { areasField, buildField, environmentField, testDataField } from './support/context.ts'
 import { readSessions, readTimeSegments } from './support/db.ts'
+import { durationOption } from './support/duration.ts'
 import { mainButton, mainNavigation } from './support/nav.ts'
 import { seedSession, type SeedSession } from './support/seed.ts'
 
@@ -155,6 +156,9 @@ test('@TAN-18 the charter can be filled and started with the keyboard', async ({
   await page.keyboard.press('Tab')
   await expect(discoverField(page)).toBeFocused()
   await page.keyboard.type('items lost between devices')
+  // The Duration group is one stop, on the checked radio [TAN-20].
+  await page.keyboard.press('Tab')
+  await expect(durationOption(page, 60)).toBeFocused()
   // The optional Context fields come next, in this order, then the button [TAN-19].
   for (const field of [
     environmentField(page),

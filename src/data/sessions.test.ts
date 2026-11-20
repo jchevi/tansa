@@ -5,18 +5,22 @@ import {
   createNote,
   createSession,
   createTimeSegment,
+  DEFAULT_TARGET_MINUTES,
   deleteSession,
   getSession,
+  InvalidRecordError,
   isInProgress,
   listSessions,
   openTansaDb,
   RecordNotFoundError,
   SessionInProgressError,
   startSession,
+  TARGET_MINUTE_OPTIONS,
   updateSession,
   type NewSession,
   type SessionPatch,
   type TansaDb,
+  type TargetMinutes,
 } from './index'
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
@@ -169,7 +173,7 @@ describe('startSession', () => {
   it('@TAN-18 creates a running session and its first open running segment', async () => {
     vi.setSystemTime(7_000)
 
-    const { session, segment } = await startSession(db, charter)
+    const { session, segment } = await startSession(db, { charter })
 
     expect(session.id).toMatch(UUID_V4)
     expect(session).toMatchObject({
@@ -199,7 +203,7 @@ describe('startSession', () => {
         segments: await db.count('timeSegments'),
       }
 
-      await expect(startSession(db, charter)).rejects.toBeInstanceOf(SessionInProgressError)
+      await expect(startSession(db, { charter })).rejects.toBeInstanceOf(SessionInProgressError)
 
       expect(await db.count('sessions')).toBe(before.sessions)
       expect(await db.count('timeSegments')).toBe(before.segments)
@@ -210,7 +214,7 @@ describe('startSession', () => {
     await createSession(db, newSession({ status: 'debrief' }))
     await createSession(db, newSession({ status: 'closed' }))
 
-    const { session } = await startSession(db, charter)
+    const { session } = await startSession(db, { charter })
 
     expect(session.status).toBe('running')
     expect(await db.count('sessions')).toBe(3)
@@ -225,7 +229,7 @@ describe('startSession', () => {
       testData: 'qa+01@example.com',
     }
 
-    const { session } = await startSession(db, charter, context)
+    const { session } = await startSession(db, { charter, context })
 
     expect(await getSession(db, session.id)).toMatchObject(context)
   })
@@ -234,7 +238,7 @@ describe('startSession', () => {
     ['no context', undefined],
     ['an empty context', { areas: [] }],
   ])('@TAN-19 with %s stores no optional context keys', async (_label, context) => {
-    const { session } = await startSession(db, charter, context)
+    const { session } = await startSession(db, { charter, context })
 
     const stored = await getSession(db, session.id)
     expect(stored?.areas).toEqual([])
@@ -246,14 +250,54 @@ describe('startSession', () => {
   it("@TAN-19 the stored areas are not the caller's array", async () => {
     const areas = ['Cart']
 
-    const { session } = await startSession(db, charter, { areas })
+    const { session } = await startSession(db, { charter, context: { areas } })
     areas.push('checkout')
 
     expect(session.areas).toEqual(['Cart'])
   })
 
+  it('@TAN-20 stores the chosen target', async () => {
+    const { session } = await startSession(db, { charter, targetMinutes: 90 })
+
+    expect(session.targetMinutes).toBe(90)
+    expect((await getSession(db, session.id))?.targetMinutes).toBe(90)
+  })
+
+  it('@TAN-20 without a target the session gets 60 minutes', async () => {
+    const { session } = await startSession(db, { charter })
+
+    expect((await getSession(db, session.id))?.targetMinutes).toBe(60)
+  })
+
+  it.each([45, 60, 90, 120] as const)('@TAN-20 stores a target of %d minutes', async (minutes) => {
+    const { session } = await startSession(db, { charter, targetMinutes: minutes })
+
+    expect((await getSession(db, session.id))?.targetMinutes).toBe(minutes)
+  })
+
+  it.each([30, 0, -60, 61, Number.NaN, Number.POSITIVE_INFINITY])(
+    '@TAN-20 refuses a target of %d minutes and writes nothing',
+    async (minutes) => {
+      await expect(
+        startSession(db, { charter, targetMinutes: minutes as TargetMinutes }),
+      ).rejects.toBeInstanceOf(InvalidRecordError)
+
+      expect(await db.count('sessions')).toBe(0)
+      expect(await db.count('timeSegments')).toBe(0)
+    },
+  )
+
+  it('@TAN-20 the options are the R1 durations and include the default', () => {
+    expect(TARGET_MINUTE_OPTIONS).toEqual([45, 60, 90, 120])
+    expect(DEFAULT_TARGET_MINUTES).toBe(60)
+    expect(TARGET_MINUTE_OPTIONS).toContain(DEFAULT_TARGET_MINUTES)
+  })
+
   it('@TAN-18 two starts at once leave a single session in progress', async () => {
-    const results = await Promise.allSettled([startSession(db, charter), startSession(db, charter)])
+    const results = await Promise.allSettled([
+      startSession(db, { charter }),
+      startSession(db, { charter }),
+    ])
 
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1)
     const rejected = results.find((r) => r.status === 'rejected')

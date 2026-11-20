@@ -82,11 +82,31 @@ it('@TAN-14 the data layer makes no network requests', async () => {
 it('@TAN-19 startSession with a context makes no network requests', async () => {
   const db = await openTansaDb()
   try {
-    await startSession(
-      db,
-      { explore: 'the checkout', with: 'a saved card', discover: 'payment errors' },
-      { environment: 'Staging', build: '1.4.2', areas: ['Checkout'], testData: 'a test card' },
-    )
+    await startSession(db, {
+      charter: { explore: 'the checkout', with: 'a saved card', discover: 'payment errors' },
+      context: {
+        environment: 'Staging',
+        build: '1.4.2',
+        areas: ['Checkout'],
+        testData: 'a test card',
+      },
+    })
+  } finally {
+    db.close()
+  }
+
+  for (const [name, spy] of Object.entries(spies)) {
+    expect(spy, name).not.toHaveBeenCalled()
+  }
+})
+
+it('@TAN-20 startSession with a target makes no network requests', async () => {
+  const db = await openTansaDb()
+  try {
+    await startSession(db, {
+      charter: { explore: 'the gift cards', with: 'a guest account', discover: 'balance errors' },
+      targetMinutes: 120,
+    })
   } finally {
     db.close()
   }
@@ -100,9 +120,7 @@ it('@TAN-18 startSession makes no network requests', async () => {
   const db = await openTansaDb()
   try {
     await startSession(db, {
-      explore: 'the size guide',
-      with: 'a mobile viewport',
-      discover: 'layout gaps',
+      charter: { explore: 'the size guide', with: 'a mobile viewport', discover: 'layout gaps' },
     })
   } finally {
     db.close()
