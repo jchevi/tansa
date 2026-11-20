@@ -46,6 +46,32 @@ Prep sheet for the exploratory session on the PR preview (QA column). It is not 
 | RTL (Hebrew) | עגלת הקניות וקודי הנחה | קודים בתוקף ושפג תוקפם | שגיאות בהחלת הנחה |
 | Mixed direction | the cart סל קניות checkout | codes WELCOME10 · SPRING25 | totals in ₪ and € |
 
+## Oracles
+
+Oracles are the rules that tell you whether what you see is a bug. They are not steps to follow. If what you see does not match an oracle, that is a Bug. If no oracle covers what you see and it still feels wrong, that is an Issue.
+
+For the data above:
+
+| Case | What should be true | Source |
+| --- | --- | --- |
+| Normal | Start is enabled and the status reads "Charter complete". The session starts with the chosen target. | Ticket; TAN-18 |
+| Empty | Start is disabled and the status reads "Missing: Explore, With, To discover". The chosen duration stays selected and stays in the label. | TAN-18; decision 2026-11-19 (label always shows the minutes) |
+| Whitespace only | Counts as empty: the status names each field that holds only blanks. | Decision 2026-11-06 (trimmed values) |
+| Very long | Text wraps. Fields grow up to ten lines and then scroll. The page never scrolls sideways, on New session or on Session. | TAN-18; decision 2026-11-19 (field heights) |
+| Emoji | Stored and shown exactly as typed, with no broken characters. | Spec R1 (no rule changes the text) |
+| RTL and mixed direction | No rule in the spec. Judge by consistency: the text reads in its own direction, and the pills and button stay where they are. | None. A mismatch here is an Issue, not a Bug. |
+
+For steps in an odd order:
+
+| Situation | What should be true | Source |
+| --- | --- | --- |
+| Reload or Back on New session | Everything resets, the duration back to 60. | Expected until TAN-73 (draft) |
+| A session already in progress | New session shows the notice with a Resume link instead of the form, Duration included. | TAN-18 |
+| Enter on a duration | Nothing starts; the choice stays. | Decision 2026-11-19 (Enter on a radio) |
+| Arrow keys in the group | Selection moves and wraps (120 → 45). Tab leaves the group in one step. | Native radio behaviour; decision 2026-11-19 |
+| Double click on Start | Exactly one session is created. | TAN-18 |
+| Any path to Start | The stored target is the one the label showed at the moment of the click. | Ticket |
+
 Context values to paste alongside them:
 
 - **Environment:** `Staging`
