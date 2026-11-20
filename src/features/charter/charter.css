@@ -303,6 +303,20 @@
   cursor: pointer;
 }
 
+/* All the labels share one cell; the widest sets the button's width [TAN-20]. */
+.charter-start-labels {
+  display: inline-grid;
+}
+
+.charter-start-label {
+  grid-area: 1 / 1;
+  text-align: center;
+}
+
+.charter-start-label[data-current='false'] {
+  visibility: hidden;
+}
+
 .charter-start:disabled {
   border: 1px dashed var(--color-muted);
   background: transparent;

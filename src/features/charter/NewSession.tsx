@@ -280,7 +280,21 @@ function CharterForm({
           disabled={missing.length > 0 || start === 'starting'}
           aria-describedby={statusId}
         >
-          {t('charter.start', { minutes: targetMinutes })}
+          {/* Every label sits in the same grid cell and only the chosen one is visible, so
+              the button is always as wide as the longest label and does not change size
+              when the duration changes. Hidden labels are not part of the name [TAN-20]. */}
+          <span className="charter-start-labels">
+            {TARGET_MINUTE_OPTIONS.map((minutes) => (
+              <span
+                key={minutes}
+                className="charter-start-label"
+                data-current={minutes === targetMinutes}
+                aria-hidden={minutes !== targetMinutes}
+              >
+                {t('charter.start', { minutes })}
+              </span>
+            ))}
+          </span>
           <span aria-hidden="true"> →</span>
         </button>
       </div>

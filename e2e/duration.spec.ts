@@ -42,7 +42,7 @@ test('@TAN-20 60 min is selected when New session opens', async ({ page }) => {
     await expect(durationOption(page, minutes)).not.toBeChecked()
   }
   await expect(startButton(page)).toHaveAccessibleName('Start session · 60 min')
-  await expect(startButton(page)).toHaveText('Start session · 60 min →')
+  await expect(startButton(page)).toHaveText('Start session · 60 min →', { useInnerText: true })
 })
 
 test('@TAN-20 a session started without choosing has a 60-minute target', async ({ page }) => {
@@ -156,6 +156,29 @@ test('@TAN-20 Enter on a duration does not start the session', async ({ page }) 
   const sessions = await readSessions(page)
   expect(sessions).toHaveLength(1)
   expect(sessions[0]?.targetMinutes).toBe(90)
+})
+
+test('@TAN-20 the Start button keeps its size whatever the duration', async ({ page }) => {
+  await openNewSession(page)
+  const size = async () => {
+    const box = await startButton(page).boundingBox()
+    return { width: box?.width, height: box?.height }
+  }
+
+  // Disabled first (charter empty), then enabled: the size must not move in either state.
+  for (const fill of [async () => {}, () => fillCharter(page, sampleCharter)]) {
+    await fill()
+    await pill(page, 60).click()
+    const expected = await size()
+    for (const minutes of [45, 90, 120]) {
+      await pill(page, minutes).click()
+      await expect(startButtonNamed(page, minutes)).toBeVisible()
+      await expect(startButton(page)).toHaveText(`Start session · ${String(minutes)} min →`, {
+        useInnerText: true,
+      })
+      expect(await size()).toEqual(expected)
+    }
+  }
 })
 
 test('@TAN-20 the duration is announced as a radio group', async ({ page }) => {
