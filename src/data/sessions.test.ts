@@ -7,7 +7,9 @@ import {
   createTimeSegment,
   DEFAULT_TARGET_MINUTES,
   deleteSession,
+  endSession,
   getSession,
+  listTimeSegments,
   InvalidRecordError,
   isInProgress,
   listSessions,
@@ -17,6 +19,7 @@ import {
   startSession,
   TARGET_MINUTE_OPTIONS,
   updateSession,
+  updateTimeSegment,
   type NewSession,
   type SessionPatch,
   type TansaDb,
@@ -306,5 +309,106 @@ describe('startSession', () => {
     )
     expect(await db.count('sessions')).toBe(1)
     expect(await db.count('timeSegments')).toBe(1)
+  })
+})
+
+describe('endSession', () => {
+  const charter = { explore: 'the wish list', with: 'a saved cart', discover: 'lost items' }
+
+  it('@TAN-21 sets status debrief and closes the open segment at the given instant', async () => {
+    const { session, segment } = await startSession(db, { charter })
+
+    const ended = await endSession(db, session.id, 61_000)
+
+    expect(ended.status).toBe('debrief')
+    expect(await getSession(db, session.id)).toEqual(ended)
+    expect(await listTimeSegments(db, session.id)).toEqual([{ ...segment, endedAt: 61_000 }])
+  })
+
+  it('@TAN-21 ends at now by default', async () => {
+    const { session } = await startSession(db, { charter })
+    vi.setSystemTime(9_000)
+
+    await endSession(db, session.id)
+
+    const [segment] = await listTimeSegments(db, session.id)
+    expect(segment?.endedAt).toBe(9_000)
+  })
+
+  it('@TAN-21 does not set closedAt: only the closed debrief does', async () => {
+    const { session } = await startSession(db, { charter })
+
+    const ended = await endSession(db, session.id, 5_000)
+
+    expect(ended).not.toHaveProperty('closedAt')
+  })
+
+  it('@TAN-21 leaves closed segments as they were and closes an open paused one', async () => {
+    const session = await createSession(db, newSession({ status: 'paused' }))
+    const closed = await createTimeSegment(db, {
+      sessionId: session.id,
+      state: 'running',
+      startedAt: 1_000,
+    })
+    await updateTimeSegment(db, closed.id, { endedAt: 2_000 })
+    const paused = await createTimeSegment(db, {
+      sessionId: session.id,
+      state: 'paused',
+      startedAt: 2_000,
+    })
+
+    await endSession(db, session.id, 7_000)
+
+    expect(await listTimeSegments(db, session.id)).toEqual([
+      { ...closed, endedAt: 2_000 },
+      { ...paused, endedAt: 7_000 },
+    ])
+  })
+
+  it('@TAN-21 leaves other sessions and their segments unchanged', async () => {
+    const other = await createSession(db, newSession({ status: 'debrief' }))
+    const otherSegment = await createTimeSegment(db, {
+      sessionId: other.id,
+      state: 'running',
+      startedAt: 500,
+    })
+    const { session } = await startSession(db, { charter })
+
+    await endSession(db, session.id, 3_000)
+
+    expect(await getSession(db, other.id)).toEqual(other)
+    expect(await listTimeSegments(db, other.id)).toEqual([otherSegment])
+  })
+
+  it('@TAN-21 a missing session throws RecordNotFoundError', async () => {
+    await expect(endSession(db, crypto.randomUUID(), 1_000)).rejects.toBeInstanceOf(
+      RecordNotFoundError,
+    )
+  })
+
+  it.each(['debrief', 'closed'] as const)(
+    '@TAN-21 a session in %s throws InvalidRecordError and nothing is written',
+    async (status) => {
+      const session = await createSession(db, newSession({ status }))
+      const segment = await createTimeSegment(db, {
+        sessionId: session.id,
+        state: 'running',
+        startedAt: 1_000,
+      })
+
+      await expect(endSession(db, session.id, 4_000)).rejects.toBeInstanceOf(InvalidRecordError)
+
+      expect(await getSession(db, session.id)).toEqual(session)
+      expect(await listTimeSegments(db, session.id)).toEqual([segment])
+    },
+  )
+
+  it('@TAN-21 a second end of the same session is refused', async () => {
+    const { session } = await startSession(db, { charter })
+    await endSession(db, session.id, 2_000)
+
+    await expect(endSession(db, session.id, 3_000)).rejects.toBeInstanceOf(InvalidRecordError)
+    const [segment] = await listTimeSegments(db, session.id)
+    expect(segment?.endedAt).toBe(2_000)
   })
 })

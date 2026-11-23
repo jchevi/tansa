@@ -38,6 +38,7 @@ describe('matchRoute', () => {
     ['/', 'home'],
     ['/new', 'newSession'],
     ['/session', 'session'],
+    ['/debrief', 'debrief'],
     ['/history', 'history'],
     ['/settings', 'settings'],
     ['/history/', 'history'],
