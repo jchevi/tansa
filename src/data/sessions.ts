@@ -74,6 +74,41 @@ export async function startSession(
   return { session, segment }
 }
 
+// Ends a session before its debrief: every segment still open gets endedAt = at, and the
+// status becomes debrief, in one transaction, so time never keeps counting for a session
+// that is no longer in progress. closedAt stays unset: it is set when the debrief is closed
+// (spec R6). Only a session in progress can end, so a second tab or a double click cannot
+// end it twice; the check runs in the same transaction as the write [TAN-21].
+export async function endSession(
+  db: TansaDb,
+  id: string,
+  at: number = Date.now(),
+): Promise<Session> {
+  const tx = db.transaction(['sessions', 'timeSegments'], 'readwrite')
+  const sessions = tx.objectStore('sessions')
+  const stored = await sessions.get(id)
+  if (!stored) {
+    return abortWith(tx, new RecordNotFoundError('sessions', id))
+  }
+  if (!isInProgress(stored.status)) {
+    return abortWith(
+      tx,
+      new InvalidRecordError(`session ${id} is ${stored.status}, not in progress`),
+    )
+  }
+  const segments = tx.objectStore('timeSegments')
+  const open = (await segments.index('bySession').getAll(sessionRange(id))).filter(
+    (segment) => segment.endedAt === undefined,
+  )
+  const ended: Session = { ...stored, status: 'debrief' }
+  await Promise.all([
+    ...open.map((segment) => segments.put({ ...segment, endedAt: at })),
+    sessions.put(ended),
+  ])
+  await tx.done
+  return ended
+}
+
 export async function createSession(db: TansaDb, input: NewSession): Promise<Session> {
   const session: Session = { ...input, id: crypto.randomUUID(), createdAt: Date.now() }
   await db.add('sessions', session)

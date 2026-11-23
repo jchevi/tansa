@@ -1,4 +1,4 @@
-/* Session screen: the charter for now [TAN-18]; the timer arrives with TAN-21. */
+/* Session screen: charter and context [TAN-18, TAN-19]. The timer is in the header [TAN-21]. */
 .session {
   display: flex;
   flex-direction: column;

@@ -4,8 +4,8 @@ import type { Session } from '../../data'
 import type { SessionInProgress } from '../shell/useSessionInProgress'
 import './session.css'
 
-// The Session screen, for now only its charter, read from storage [TAN-18]. The timer,
-// End session and the rest arrive with TAN-21.
+// The Session screen: its charter and context, read from storage [TAN-18, TAN-19]. The
+// timer and End session live in the header (Navigation) [TAN-21].
 export function SessionScreen({ inProgress }: { inProgress: SessionInProgress | null }) {
   const { t } = useTranslation()
   const headingId = useId()

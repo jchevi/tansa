@@ -1,0 +1,42 @@
+/* The session timer in the header [TAN-21]. Colors only from tokens.css. */
+
+.timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 10px;
+  font-family: var(--font-mono);
+}
+
+.timer-ring {
+  flex: none;
+  fill: none;
+}
+
+.timer-ring-track {
+  stroke: var(--color-hair);
+  stroke-width: 2;
+}
+
+/*
+ * The arc creeps forward between ticks. Under "reduce motion" the global rule in
+ * base.css (0.01ms !important) stops it, so the arc moves in steps: keep this a normal
+ * declaration so that rule wins.
+ */
+.timer-ring-arc {
+  stroke: var(--color-accent-strong);
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+}
+
+.timer-elapsed {
+  color: var(--color-ink);
+  font-size: 14px;
+}
+
+.timer-remaining {
+  color: var(--color-muted);
+  font-size: 13px;
+}
