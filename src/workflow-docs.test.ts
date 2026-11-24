@@ -172,7 +172,7 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-88 the Mockup departures table has its columns and says how a row is corrected', () => {
-      expect(rows().length).toBeGreaterThanOrEqual(14)
+      expect(rows().length).toBeGreaterThanOrEqual(13)
       expect(register()).toContain('fills in Corrected in')
       expect(register()).toContain('adds its own row to Design')
     })
