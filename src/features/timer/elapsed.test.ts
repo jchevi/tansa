@@ -1,6 +1,49 @@
 import { describe, expect, it } from 'vitest'
 import type { TimeSegment } from '../../data'
-import { elapsedMs, formatElapsed } from './elapsed'
+import { elapsedMs, formatElapsed, remainingMs, ringProgress } from './elapsed'
+
+const SECOND = 1_000
+
+describe('remainingMs', () => {
+  it('@TAN-21 nothing elapsed leaves the whole target', () => {
+    expect(remainingMs(0, 60)).toBe(60 * 60_000)
+  })
+
+  it('@TAN-21 counts from the whole seconds shown as elapsed', () => {
+    // 37:12.6 is shown as 37:12, so 22:48 is left, not 22:47.
+    expect(formatElapsed(remainingMs((37 * 60 + 12) * SECOND + 600, 60))).toBe('22:48')
+  })
+
+  it('@TAN-21 is 0 at the target and never negative past it', () => {
+    expect(remainingMs(60 * 60_000, 60)).toBe(0)
+    expect(remainingMs(60 * 60_000 + 5 * SECOND, 60)).toBe(0)
+  })
+
+  it('@TAN-21 elapsed and remaining always add up to the target in whole seconds', () => {
+    for (const target of [45, 60, 90, 120]) {
+      for (let elapsed = 0; elapsed < target * 60_000; elapsed += 7_919) {
+        const shownElapsed = Math.floor(elapsed / SECOND)
+        const shownRemaining = Math.floor(remainingMs(elapsed, target) / SECOND)
+        expect(shownElapsed + shownRemaining).toBe(target * 60)
+      }
+    }
+  })
+})
+
+describe('ringProgress', () => {
+  it('@TAN-21 is the share of the target elapsed', () => {
+    expect(ringProgress(0, 60)).toBe(0)
+    expect(ringProgress(30 * 60_000, 60)).toBe(0.5)
+  })
+
+  it('@TAN-21 stops at a full ring past the target', () => {
+    expect(ringProgress(90 * 60_000, 60)).toBe(1)
+  })
+
+  it('@TAN-21 a target of 0 gives an empty ring, not NaN', () => {
+    expect(ringProgress(5 * 60_000, 0)).toBe(0)
+  })
+})
 
 const NOW = 1_000_000_000
 const MINUTE = 60_000

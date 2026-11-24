@@ -1,4 +1,4 @@
-// Every screen and its path. Five flat routes, so a small router of our own is enough
+// Every screen and its path. Flat routes with no parameters, so a small router of our own is enough
 // (decision in docs/decisions.md, TAN-17).
 export const routes = {
   home: '/',
@@ -6,6 +6,8 @@ export const routes = {
   session: '/session',
   history: '/history',
   settings: '/settings',
+  // The placeholder after End session until the debrief exists (TAN-4) [TAN-21].
+  debrief: '/debrief',
 } as const
 
 export type Route = keyof typeof routes

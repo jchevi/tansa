@@ -1,11 +1,62 @@
 /* Navigation on every screen but Home (TAN-17). Colors only from tokens.css. */
 
+/* Sticky, so the session timer is always in view [TAN-21]; the bg band keeps scrolled
+   text from showing between the pills. */
 .nav-top {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 24px 12px;
+  background: var(--color-bg);
+}
+
+.nav-start {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  padding: 16px 24px 0;
+}
+
+/* The session pill: the timer and, on Session, End session [TAN-21]. */
+.nav-session {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 28px;
+  background: var(--color-card);
+  box-shadow: 0 0 0 1px var(--color-hair);
+}
+
+.nav-end {
+  min-height: 44px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 22px 22px 22px 6px;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nav-end:disabled {
+  cursor: progress;
+}
+
+.nav-end-error {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 4px 12px 6px;
+  color: var(--color-ink);
+  font-size: 13px;
 }
 
 .nav-pill {

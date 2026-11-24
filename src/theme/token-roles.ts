@@ -28,6 +28,8 @@ export const nonTextPairs: readonly Pair[] = [
   ['--color-primary', '--color-card'],
   ['--color-muted', '--color-bg'],
   ['--color-muted', '--color-card'],
+  // The ensō ring's arc carries the session's progress [TAN-21].
+  ['--color-accent-strong', '--color-card'],
 ]
 
 // Never text, and never the only way to tell things apart: buttons carry text, tags and

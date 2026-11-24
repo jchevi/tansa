@@ -16,3 +16,10 @@ export const logoLink = (page: Page) =>
 
 // The first link in the Home menu is the main button.
 export const mainButton = (page: Page) => mainMenu(page).getByRole('link').first()
+
+// The session timer and End session, in the header (the banner landmark) [TAN-21].
+export const sessionTimer = (page: Page) =>
+  page.getByRole('banner').getByRole('group', { name: 'Session time', exact: true })
+
+export const endSessionButton = (page: Page) =>
+  page.getByRole('button', { name: 'End session', exact: true })

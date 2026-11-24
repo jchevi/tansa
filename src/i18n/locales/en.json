@@ -12,7 +12,8 @@
     "mainMenu": "Main menu",
     "mainNavigation": "Main navigation",
     "preferences": "Preferences",
-    "logo": "tansa · Home"
+    "logo": "tansa · Home",
+    "debrief": "Debrief"
   },
   "home": {
     "tagline": "探査 · exploratory testing sessions",
@@ -65,5 +66,18 @@
     "issue": "Issue",
     "proof": "PROOF",
     "tbs": "TBS"
+  },
+  "timer": {
+    "label": "Session time",
+    "remaining": "{{time}} left",
+    "ring": "{{elapsed}} of {{target}} minutes elapsed"
+  },
+  "session": {
+    "end": "End session",
+    "endFailed": "The session could not be ended. Try again."
+  },
+  "debrief": {
+    "comingSoon": "The {{proof}} debrief is coming soon. Your session is saved.",
+    "backHome": "Back to Home"
   }
 }

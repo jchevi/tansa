@@ -7,6 +7,7 @@ export {
   createSession,
   DEFAULT_TARGET_MINUTES,
   deleteSession,
+  endSession,
   getSession,
   isInProgress,
   listSessions,

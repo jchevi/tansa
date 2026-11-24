@@ -80,7 +80,10 @@ export default defineConfig([
         },
       ],
       // Shared assertion helpers in e2e/support count as assertions [TAN-19].
-      'playwright/expect-expect': ['warn', { assertFunctionNames: ['expectVisibleBoundary'] }],
+      'playwright/expect-expect': [
+        'warn',
+        { assertFunctionNames: ['expectVisibleBoundary', 'expectTimerReads'] },
+      ],
     },
   },
   {
