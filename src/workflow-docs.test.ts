@@ -48,9 +48,10 @@ describe('workflow docs', () => {
     }
   })
 
-  // Step 2's own line and its indented sub-lines, up to step 3 [TAN-80].
-  function stepBlock(step: number): string[] {
-    const lines = lifecycle.split(/\r?\n/)
+  // A numbered step's own line and its indented sub-lines, up to the next step, in the
+  // Ticket lifecycle unless another section is given [TAN-80, TAN-88].
+  function stepBlock(step: number, text: string = lifecycle): string[] {
+    const lines = text.split(/\r?\n/)
     const start = lines.findIndex((l) => l.startsWith(`${String(step)}. `))
     const end = lines.findIndex((l) => l.startsWith(`${String(step + 1)}. `))
     expect(start).toBeGreaterThan(-1)
@@ -114,6 +115,102 @@ describe('workflow docs', () => {
       .split(/\r?\n/)
       .filter((l) => l.startsWith('## '))
     expect(headings.some((h) => h.startsWith(`## ${name}`))).toBe(true)
+  })
+
+  // The mockup is the reference: the plan quotes it in a Mockup check, every difference is
+  // an owner decision, and approved ones are tracked in a register until corrected [TAN-88].
+  describe('mockup rule', () => {
+    const howToWork = section(claude, 'How to work')
+    const reviewer = read('../.claude/agents/plan-fidelity-reviewer.md')
+    const skill = read('../.claude/skills/review-loop/SKILL.md')
+    const register = () => section(decisions, 'Mockup departures')
+    const header = '| Date | Ticket | Mockup | Mockup shows | Built | Kind | Corrected in |'
+    // Every table line after the header and its separator, so a malformed row is checked,
+    // not skipped.
+    const rows = () => {
+      const lines = register()
+        .split(/\r?\n/)
+        .filter((l) => l.startsWith('|'))
+      expect(lines[0]).toBe(header)
+      return lines.slice(2)
+    }
+    const cells = (row: string) =>
+      row
+        .slice(1, -1)
+        .split('|')
+        .map((cell) => cell.trim())
+
+    it('@TAN-88 How to work step 2 makes the mockup the reference and requires a Mockup check', () => {
+      const step = stepBlock(2, howToWork).join('\n')
+      for (const text of [
+        '**Mockup check:**',
+        'the mockup named in the ticket is the reference',
+        'Never depart from the mockup silently',
+        'Mockup departures',
+        "fills in that row's Corrected in",
+      ]) {
+        expect(step).toContain(text)
+      }
+    })
+
+    it('@TAN-88 the plan-fidelity reviewer checks every mockup departure is an owner decision', () => {
+      const check = reviewer.split(/\r?\n/).find((l) => l.startsWith('8. **Mockup**:'))
+      expect(check).toBeDefined()
+      for (const text of [
+        'Mockup check',
+        'decisions presented to the owner',
+        'missing from those decisions is a **major**',
+      ]) {
+        expect(check).toContain(text)
+      }
+    })
+
+    it('@TAN-88 the review-loop plan phase asks for a Mockup check', () => {
+      const planPhase = section(skill, 'Plan phase')
+      expect(planPhase).toContain('Mockup check')
+      expect(planPhase).toContain('Mockup departures')
+    })
+
+    it('@TAN-88 the Mockup departures table has its columns and says how a row is corrected', () => {
+      expect(rows().length).toBeGreaterThanOrEqual(13)
+      expect(register()).toContain('fills in Corrected in')
+      expect(register()).toContain('adds its own row to Design')
+    })
+
+    it('@TAN-88 every departure row is well formed', () => {
+      for (const row of rows()) {
+        const [date, ticket, mockup, shows, built, kind, corrected] = cells(row)
+        expect(cells(row), row).toHaveLength(7)
+        expect(date, row).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+        expect(ticket, row).toMatch(/^TAN-\d+$/)
+        expect(mockup, row).not.toBe('')
+        expect(shows, row).not.toBe('')
+        expect(built, row).not.toBe('')
+        expect(kind, row).toMatch(/^(permanent|temporary until TAN-\d+)$/)
+        expect(corrected, row).toMatch(/^(|TAN-\d+ on \d{4}-\d{2}-\d{2})$/)
+        if (kind === 'permanent') expect(corrected, row).toBe('')
+      }
+    })
+
+    it("@TAN-88 TAN-21's header departure is tracked until TAN-86 corrects it", () => {
+      const tan21 = rows()
+        .map(cells)
+        .filter(
+          ([, ticket, , , , kind]) => ticket === 'TAN-21' && kind === 'temporary until TAN-86',
+        )
+      expect(tan21).toHaveLength(1)
+      expect(tan21[0]?.[2]).toContain('v0.1 · Session (document + focus)')
+    })
+
+    it('@TAN-88 a Process row explains the mockup rule', () => {
+      const row = section(decisions, 'Process')
+        .split(/\r?\n/)
+        .find((l) => l.includes('Mockup departures'))
+      expect(row).toMatch(/^\| 2026-11-2\d \|/)
+      const why = row?.split(' | ').at(-1) ?? ''
+      expect(why).toContain('TAN-21')
+      expect(why).toContain('TAN-86')
+    })
   })
 
   it('@TAN-28 CLAUDE.md and the decision log agree on merge commits', () => {

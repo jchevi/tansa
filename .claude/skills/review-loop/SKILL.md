@@ -24,10 +24,10 @@ A round is each distinct plan hash or HEAD SHA within a phase. The plan hash is 
 
 ## Plan phase
 
-1. Write the plan to `.claude/plans/TAN-<n>.md`.
+1. Write the plan to `.claude/plans/TAN-<n>.md`, with a Mockup check when the ticket names a mockup (`CLAUDE.md`, How to work step 2).
 2. Launch `plan-fidelity-reviewer` and `plan-testability-reviewer` in parallel. Each prompt holds: the ticket key, the ticket text, the plan path, the round number and, from round 2, the previous findings with how each one was resolved.
 3. Cross-check the findings (below), fix the plan file, and start the next round.
-4. When the round is clean, present the plan to the owner with the review line (below) and wait for approval.
+4. When the round is clean, present the plan to the owner with the review line (below) and wait for approval. Every departure from the mockup is one of the decisions presented; the approved ones are added to `docs/decisions.md` → Mockup departures in the ticket's PR.
 
 ## Code phase
 

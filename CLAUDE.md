@@ -19,7 +19,7 @@ It is built by one person (a senior QA engineer, intermediate programmer) as a p
 
 ## Where things are
 - `docs/spec.md`: MVP spec (requirements R1–R15, data model). Source of truth for behaviour.
-- `docs/decisions.md`: decision log with reasons.
+- `docs/decisions.md`: decision log with reasons. Its Mockup departures table lists every approved difference from the mockups until it is corrected.
 - Backlog: Jira, space TAN (https://jchevi.atlassian.net). Each ticket has Gherkin acceptance criteria.
 - `.claude/skills/review-loop`: the plan and code review procedure; `.claude/agents`: its four read-only reviewers.
 - `src/features/*` UI by feature · `src/data` IndexedDB access · `src/i18n` strings · `src/theme` color tokens.
@@ -27,6 +27,7 @@ It is built by one person (a senior QA engineer, intermediate programmer) as a p
 ## How to work
 1. One Jira ticket at a time. Start by reading the ticket and the related part of `docs/spec.md`.
 2. Plan before coding: write `.claude/plans/TAN-<n>.md` with the files you will touch and how each acceptance criterion will be tested, run `/review-loop plan` until it is clean, then present it. Wait for approval on anything non-trivial.
+   - **Mockup check:** the mockup named in the ticket is the reference. The plan has a Mockup check section: a table with, for each element the ticket touches, what the mockup shows (quoted: reviewers cannot open the canvas) and what the plan builds. Every difference is one of the decisions presented to the owner, with its reason, and once approved goes into `docs/decisions.md` → Mockup departures. The ticket that later makes the screen match fills in that row's Corrected in and adds its own Design row. Never depart from the mockup silently.
 3. If the ticket is ambiguous or conflicts with the spec or a decision, **stop and ask**. Do not resolve it silently.
 4. Keep scope small: anything not in the ticket becomes a Jira ticket that Claude creates in the same session (shape in the `review-loop` skill), not a note and not code. An exception to the Definition of Done (e.g. a deferred exploratory session) gets its Process row in `docs/decisions.md` and a ticket in the same session.
 5. Write the test from the acceptance criteria first (Playwright for stories, Vitest or another automated check for tasks), see it fail, then write the code.
