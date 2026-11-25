@@ -211,6 +211,89 @@ describe('workflow docs', () => {
       expect(why).toContain('TAN-21')
       expect(why).toContain('TAN-86')
     })
+
+    // The plan compares against an image of the whole screen, not only the markup its
+    // author chose to quote; a screen with no image waits for its design [TAN-90].
+    describe('mockup images', () => {
+      const states = [
+        'home-session-running',
+        'home-no-session',
+        'new-session-empty',
+        'new-session-partly-filled',
+        'session-document',
+        'session-focus',
+        'history',
+        'history-empty',
+      ]
+      const sources = ['home', 'new-session', 'session', 'history']
+      const readme = () => read('../docs/mockups/README.md')
+      // Bytes, not utf8: decoding would corrupt the PNG header.
+      const bytes = (relative: string) =>
+        readFileSync(fileURLToPath(new URL(relative, import.meta.url)))
+      const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+
+      it('@TAN-90 docs/mockups has one PNG per v0.1 screen state and the screen sources', () => {
+        for (const state of states) {
+          const png = bytes(`../docs/mockups/${state}.png`)
+          expect(png.subarray(0, 8).equals(pngSignature), state).toBe(true)
+          expect(png.readUInt32BE(16), state).toBe(1440)
+        }
+        for (const source of sources) {
+          expect(read(`../docs/mockups/source/${source}.dc.html`).length).toBeGreaterThan(0)
+        }
+        const listed = readme()
+          .split(/\r?\n/)
+          .filter((l) => l.startsWith('| `'))
+          .map((l) => /^\| `([^`]+)\.png` \|/.exec(l)?.[1])
+        expect(listed.sort()).toEqual([...states].sort())
+      })
+
+      it('@TAN-90 the Mockup check compares the plan against the images', () => {
+        const line = stepBlock(2, howToWork).find((l) => l.startsWith('   - **Mockup check:**'))
+        expect(line).toBeDefined()
+        for (const text of [
+          '`docs/mockups/<state>.png`',
+          'compares the plan against it',
+          '`docs/mockups/source/`',
+          'is not planned until its design ticket is done',
+        ]) {
+          expect(line).toContain(text)
+        }
+      })
+
+      it('@TAN-90 the plan-fidelity reviewer opens the images the plan names', () => {
+        const check = reviewer.split(/\r?\n/).find((l) => l.startsWith('8. **Mockup**:'))
+        for (const text of [
+          'Open with Read every image in `docs/mockups/`',
+          'visible difference',
+          'that is not among those decisions is a **major**',
+          'is also a **major**',
+          'a screen state with no image in `docs/mockups/`: it waits for its design ticket',
+        ]) {
+          expect(check).toContain(text)
+        }
+      })
+
+      it('@TAN-90 the review-loop plan phase mentions the images', () => {
+        expect(section(skill, 'Plan phase')).toContain('`docs/mockups/`')
+      })
+
+      it('@TAN-90 the mockups README says how to regenerate them and where departures live', () => {
+        const regenerate = section(readme(), 'How to regenerate the screenshots')
+        for (const text of ['Playwright', '1440', 'full-page']) {
+          expect(regenerate).toContain(text)
+        }
+        expect(readme()).toContain('Mockup departures table of `docs/decisions.md`')
+      })
+
+      it('@TAN-90 a Process row explains the mockup images', () => {
+        const row = section(decisions, 'Process')
+          .split(/\r?\n/)
+          .find((l) => l.startsWith('| 2026-11-25 |') && l.includes('`docs/mockups/`'))
+        expect(row).toBeDefined()
+        expect(row?.split(' | ').at(-1)).toContain('TAN-88')
+      })
+    })
   })
 
   it('@TAN-28 CLAUDE.md and the decision log agree on merge commits', () => {
