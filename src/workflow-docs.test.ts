@@ -423,10 +423,94 @@ describe('workflow docs', () => {
     expect(decision).toContain('squash and rebase disabled')
   })
 
-  it('@TAN-31 both docs end the bootstrap at the same ticket', () => {
-    const bootstrap = 'TAN-9 to TAN-11 bootstrap'
-    expect(section(claude, 'Definition of Done')).toContain(bootstrap)
-    expect(decisions).toContain(bootstrap)
-    expect(claude).toContain('From TAN-12 on, every ticket meets the full Definition of Done')
+  // The bootstrap history moved out of CLAUDE.md into the decision log [TAN-100].
+  it('@TAN-31 the decision log ends the bootstrap at TAN-11', () => {
+    const dod = section(decisions, 'Definition of Done')
+    expect(dod).toContain('TAN-9 to TAN-11 bootstrap')
+    expect(dod).toContain('From TAN-12 on, every ticket meets the full Definition of Done')
+  })
+
+  // CLAUDE.md is trimmed to free room under its line budget. Each move checks the new
+  // home and that the old text is gone, so a move that leaves a copy behind fails [TAN-100].
+  describe('CLAUDE.md content moved out', () => {
+    const readme = read('../README.md')
+    const where = section(claude, 'Where things are')
+    const rowsOf = (markdown: string, heading: string) => section(markdown, heading).split(/\r?\n/)
+    const bullets = (text: string) => text.split(/\r?\n/).filter((l) => l.startsWith('- '))
+
+    it('@TAN-100 the commands live in the README, not in CLAUDE.md', () => {
+      expect(claude).not.toContain('\n## Commands\n')
+      const rows = rowsOf(readme, 'Commands')
+      for (const command of [
+        'npm run dev',
+        'npm run build',
+        'npm run preview',
+        'npm run lint',
+        'npm run typecheck',
+        'npm run format',
+        'npm run format:check',
+        'npm run test',
+        'npm run test:e2e',
+      ]) {
+        expect(
+          rows.some((l) => l.startsWith(`| \`${command}\` `)),
+          command,
+        ).toBe(true)
+      }
+    })
+
+    it('@TAN-100 Where things are points to the README for commands and folders', () => {
+      expect(where).toContain('`README.md`: commands, folder structure and test conventions')
+      expect(where).not.toContain('`src/features/*` UI by feature')
+      const rows = rowsOf(readme, 'Folder structure')
+      for (const folder of ['src/features/', 'src/data/', 'src/i18n/', 'src/theme/']) {
+        expect(
+          rows.some((l) => l.startsWith(`| \`${folder}\` `)),
+          folder,
+        ).toBe(true)
+      }
+    })
+
+    it('@TAN-100 the README points to the Claude Code workflow files', () => {
+      const workflow = section(readme, 'Working with Claude Code')
+      for (const path of [
+        'CLAUDE.md',
+        '.claude/skills/start-of-chat',
+        '.claude/skills/review-loop',
+        '.claude/agents',
+        '.claude/hooks',
+      ]) {
+        expect(workflow, path).toContain(`\`${path}\``)
+      }
+      expect(where).not.toContain('.claude/agents')
+      expect(where).not.toContain('four read-only reviewers')
+    })
+
+    it('@TAN-100 the Definition of Done keeps the branch protection, in both lists alike', () => {
+      const claudeDod = bullets(section(claude, 'Definition of Done'))
+      const ci = claudeDod.find((l) => l.startsWith('- Lint, typecheck and tests green in CI'))
+      expect(ci).toContain('`main` only accepts a PR whose `checks` and `e2e` jobs pass')
+      expect(claudeDod).toEqual(bullets(section(decisions, 'Definition of Done')))
+      expect(claude).not.toContain('bootstrapped')
+    })
+
+    it('@TAN-100 the IndexedDB and no-backend facts live in the hard rules and the README', () => {
+      expect(section(claude, 'Stack')).not.toContain('IndexedDB')
+      const hardRules = section(claude, 'Hard rules')
+      expect(hardRules).toContain('**Local-first:**')
+      expect(hardRules).toContain('components never call IndexedDB directly')
+      expect(readme).toContain('All data stays in your browser (IndexedDB). There is no backend.')
+    })
+
+    it('@TAN-100 a Process row records what moved where', () => {
+      const row = section(decisions, 'Process')
+        .split(/\r?\n/)
+        .find((l) => l.startsWith('| 2026-11-25 |') && l.includes('TAN-100'))
+      expect(row).toBeDefined()
+      expect(row).toContain('README')
+      expect(row).toContain('docs/decisions.md')
+      const why = row?.split(' | ').at(-1) ?? ''
+      expect(why).toContain('line budget')
+    })
   })
 })
