@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TANSA · New session</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=Zen+Kaku+Gothic+New:wght@400;500;700&amp;family=Zen+Maru+Gothic:wght@500;700;900&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#E9673A}a:hover{color:#C9532B}
+button,textarea,input{font-family:inherit}
+button:focus-visible,textarea:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #E9673A;outline-offset:3px}
+textarea::placeholder,input::placeholder{color:var(--muted);opacity:0.8}
+.tm{transition:transform .6s cubic-bezier(.65,0,.35,1),opacity .4s ease}
+.tm-core{transform-box:fill-box;transform-origin:center}
+@media (prefers-reduced-motion: reduce){.tm{transition:none}}
+</style>
+</helmet>
+<div style="{{rootStyle}}">
+<div style="position: relative; flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 24px 0">
+<div style="display: flex; align-items: center; gap: 10px">
+<nav aria-label="Main navigation" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px 8px 6px 18px; border-radius: 28px; background: var(--card); box-shadow: 0 0 0 1px var(--hair)">
+<a href="Home.dc.html" aria-label="tansa · Home" title="Home" style="min-height: 40px; display: inline-flex; align-items: center; font-family: 'Zen Maru Gothic', sans-serif; font-weight: 900; font-size: 22px; letter-spacing: 0.04em; color: var(--ink); text-decoration: none; margin-right: 14px">tansa</a>
+<a href="Alt6-Combinada.dc.html" style="min-height: 40px; display: inline-flex; align-items: center; padding: 0 14px; border-radius: 20px; color: var(--muted); font-size: 14px; text-decoration: none">Session</a>
+<a href="Sesiones.dc.html" style="min-height: 40px; display: inline-flex; align-items: center; padding: 0 14px; border-radius: 20px; color: var(--muted); font-size: 14px; text-decoration: none">History</a>
+</nav>
+<a href="#" aria-current="page" aria-label="New session" title="New session" style="width: 52px; height: 52px; border-radius: 26px 26px 26px 8px; background: #E9673A; color: #1B2029; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px #E9673A"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg></a>
+</div>
+</header>
+
+<div style="position: fixed; left: 20px; bottom: 20px; z-index: 2; display: flex; flex-direction: column; gap: 2px; padding: 4px; border-radius: 26px 26px 26px 8px; background: var(--card); box-shadow: 0 0 0 1px var(--hair)">
+<button type="button" onClick="{{toggleTheme}}" aria-label="{{themeLabel}}" title="{{themeLabel}}" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: transparent; color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24">
+<mask id="tansa-theme-mask"><rect x="0" y="0" width="24" height="24" fill="#fff"/><circle class="tm" cx="18" cy="6" r="7" fill="#000" style="{{maskStyle}}"/></mask>
+<g class="tm tm-core" style="{{sunGroupStyle}}">
+<circle cx="12" cy="12" r="8" fill="currentColor" mask="url(#tansa-theme-mask)"/>
+<g class="tm" style="{{raysStyle}}" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 1.5v2M12 20.5v2M1.5 12h2M20.5 12h2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M4.6 19.4L6 18M18 6l1.4-1.4"/></g>
+</g>
+</svg>
+</button>
+<a href="#" aria-label="Settings" title="Settings" style="width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--muted)"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
+</div>
+
+<main style="flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; padding: 40px 32px 48px">
+<form style="width: 100%; max-width: 780px; display: flex; flex-direction: column; gap: 28px">
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.14em; color: #C9532B">NEW SESSION</span>
+<h1 style="margin: 0; font-family: 'Zen Maru Gothic', sans-serif; font-weight: 900; font-size: 46px; line-height: 1.2; color: var(--ink)">What will you explore?</h1>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: var(--muted)">The charter is the session's mission. All three fields are required.</p>
+</div>
+
+<section aria-label="Charter" style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 18px 20px; border-radius: 24px 24px 24px 6px; background: var(--card); box-shadow: inset 0 0 0 1px var(--hair)">
+<label for="f-explore" style="font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 0.14em; color: #C9532B">EXPLORE <span style="font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 400; letter-spacing: 0; color: var(--muted)">· the area or feature</span></label>
+<textarea id="f-explore" rows="1" value="{{explore}}" onChange="{{onExplore}}" placeholder="the cart and promo codes" style="resize: none; border: none; background: transparent; color: var(--ink); font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 26px; line-height: 1.35; padding: 2px 0"></textarea>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-radius: 22px 22px 22px 4px; background: var(--card); box-shadow: inset 0 0 0 1px var(--hair)">
+<label for="f-with" style="font-size: 12px; letter-spacing: 0.12em; color: var(--muted)">WITH · resources, data or heuristics</label>
+<textarea id="f-with" rows="2" value="{{withF}}" onChange="{{onWith}}" placeholder="valid, expired and stacked codes" style="resize: none; border: none; background: transparent; color: var(--ink); font-size: 16px; line-height: 1.5; padding: 0"></textarea>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-radius: 22px 22px 22px 4px; background: var(--card); box-shadow: inset 0 0 0 1px var(--hair)">
+<label for="f-discover" style="font-size: 12px; letter-spacing: 0.12em; color: var(--muted)">TO DISCOVER · what information you're after</label>
+<textarea id="f-discover" rows="2" value="{{discover}}" onChange="{{onDiscover}}" placeholder="errors when applying or stacking discounts" style="resize: none; border: none; background: transparent; color: var(--ink); font-size: 16px; line-height: 1.5; padding: 0"></textarea>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="h-time" style="display: flex; flex-direction: column; gap: 12px">
+<h2 id="h-time" style="margin: 0; font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 18px; color: var(--ink)">Duration</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{durations}}" as="d" hint-placeholder-count="4">
+<button type="button" onClick="{{d.pick}}" aria-pressed="{{d.pressed}}" style="{{d.style}}">{{d.label}}</button>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="h-ctx" style="display: flex; flex-direction: column; gap: 12px">
+<button type="button" onClick="{{toggleCtx}}" aria-expanded="{{ctxExpanded}}" aria-controls="ctx-fields" style="align-self: flex-start; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0; border: none; background: transparent; color: var(--ink); cursor: pointer">
+<span id="h-ctx" style="font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 18px">Context</span>
+<span style="font-size: 14px; color: var(--muted)">optional · so bugs are reproducible</span>
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" style="{{chevronStyle}}"><path d="M3 5l4 4 4-4"/></svg>
+</button>
+<sc-if value="{{ctxOpen}}" hint-placeholder-val="{{ true }}">
+<div id="ctx-fields" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="f-env" style="font-size: 13px; color: var(--muted)">Environment</label>
+<input id="f-env" type="text" placeholder="Staging" style="min-height: 44px; box-sizing: border-box; padding: 0 14px; border-radius: 14px; border: 1px solid var(--hair); background: var(--card); color: var(--ink); font-size: 15px">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="f-build" style="font-size: 13px; color: var(--muted)">Build or version</label>
+<input id="f-build" type="text" placeholder="1.4.2" style="min-height: 44px; box-sizing: border-box; padding: 0 14px; border-radius: 14px; border: 1px solid var(--hair); background: var(--card); color: var(--ink); font-family: 'IBM Plex Mono', monospace; font-size: 14px">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2">
+<label for="f-areas" style="font-size: 13px; color: var(--muted)">Areas · comma-separated</label>
+<input id="f-areas" type="text" placeholder="Cart, checkout" style="min-height: 44px; box-sizing: border-box; padding: 0 14px; border-radius: 14px; border: 1px solid var(--hair); background: var(--card); color: var(--ink); font-size: 15px">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2">
+<label for="f-data" style="font-size: 13px; color: var(--muted)">Test data</label>
+<textarea id="f-data" rows="2" placeholder="Test user qa+01@example.com · codes WELCOME10, SPRING25, VIP5" style="resize: vertical; box-sizing: border-box; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--hair); background: var(--card); color: var(--ink); font-size: 15px; line-height: 1.5"></textarea>
+</div>
+</div>
+</sc-if>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 16px; padding-top: 8px; border-top: 1px solid var(--hair)">
+<p id="missing" aria-live="polite" style="{{missingStyle}}">{{missingText}}</p>
+<sc-if value="{{ready}}" hint-placeholder-val="{{ false }}">
+<a href="Alt6-Combinada.dc.html" style="min-height: 52px; display: inline-flex; align-items: center; gap: 10px; padding: 0 26px; border-radius: 26px 26px 26px 6px; background: var(--primary); color: var(--onPrimary); font-size: 16px; font-weight: 700; text-decoration: none">Start session · {{minutes}} min →</a>
+</sc-if>
+<sc-if value="{{notReady}}" hint-placeholder-val="{{ true }}">
+<button type="button" disabled aria-describedby="missing" style="min-height: 52px; padding: 0 26px; border-radius: 26px 26px 26px 6px; border: 1px dashed var(--muted); background: transparent; color: var(--muted); font-size: 16px; font-weight: 700; cursor: not-allowed">Start session →</button>
+</sc-if>
+</div>
+
+</form>
+</main>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"prefilled":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const full = !!props.prefilled;
+    this.state = {
+      theme: null,
+      explore: full ? 'the cart and promo codes' : '',
+      withF: full ? 'valid, expired and stacked codes' : '',
+      discover: '',
+      minutes: 60,
+      ctxOpen: true
+    };
+  }
+  renderVals() {
+    const theme = this.state.theme || this.props.theme || 'light';
+    const dark = theme === 'dark';
+    const P = dark
+      ? { bg: '#1B2029', surface: '#20262F', card: '#232A35', ink: '#ECE6D8', muted: '#A9ADB4', hair: '#343C49', primary: '#E9673A', onPrimary: '#1B2029' }
+      : { bg: '#F3EFE6', surface: '#EBE6DA', card: '#FBF9F4', ink: '#262D3A', muted: '#5E6470', hair: '#DDD6C8', primary: '#262D3A', onPrimary: '#F3EFE6' };
+    const rootStyle = '--bg:' + P.bg + ';--surface:' + P.surface + ';--card:' + P.card + ';--ink:' + P.ink + ';--muted:' + P.muted + ';--hair:' + P.hair + ';--primary:' + P.primary + ';--onPrimary:' + P.onPrimary + ';position:relative;width:100%;min-height:960px;box-sizing:border-box;display:flex;background:' + P.bg + ';color:' + P.ink + ';font-family:"Zen Kaku Gothic New",system-ui,sans-serif';
+    const s = this.state;
+    const missing = [];
+    if (!s.explore.trim()) missing.push('Explore');
+    if (!s.withF.trim()) missing.push('With');
+    if (!s.discover.trim()) missing.push('To discover');
+    const ready = missing.length === 0;
+    const durations = [45, 60, 90, 120].map((m) => {
+      const sel = s.minutes === m;
+      return {
+        label: m + ' min',
+        pressed: sel ? 'true' : 'false',
+        pick: () => this.setState({ minutes: m }),
+        style: 'min-height:44px;padding:0 20px;border-radius:22px 22px 22px 6px;cursor:pointer;font-family:"IBM Plex Mono",monospace;font-size:14px;color:' + P.ink + ';font-weight:' + (sel ? '500' : '400') + ';border:' + (sel ? '2px solid #E9673A' : '1px solid ' + P.hair) + ';background:' + (sel ? '#E9673A2E' : P.card)
+      };
+    });
+    return {
+      rootStyle,
+      explore: s.explore,
+      withF: s.withF,
+      discover: s.discover,
+      onExplore: (e) => this.setState({ explore: e.target.value }),
+      onWith: (e) => this.setState({ withF: e.target.value }),
+      onDiscover: (e) => this.setState({ discover: e.target.value }),
+      durations,
+      minutes: s.minutes,
+      ctxOpen: s.ctxOpen,
+      ctxExpanded: s.ctxOpen ? 'true' : 'false',
+      toggleCtx: () => this.setState({ ctxOpen: !s.ctxOpen }),
+      chevronStyle: 'transition:transform .25s ease;transform:rotate(' + (s.ctxOpen ? '180deg' : '0deg') + ')',
+      ready,
+      notReady: !ready,
+      missingText: ready ? 'Charter complete' : 'Missing: ' + missing.join(', '),
+      missingStyle: 'margin:0;font-size:14px;color:' + (ready ? P.muted : P.ink),
+      maskStyle: dark ? 'transform:translate(10px,-10px)' : 'transform:translate(-4px,3px)',
+      sunGroupStyle: dark ? 'transform:rotate(90deg) scale(0.62)' : 'transform:rotate(0deg) scale(1)',
+      raysStyle: dark ? 'opacity:1;transform:scale(1.55);transform-origin:12px 12px' : 'opacity:0;transform:scale(0.6);transform-origin:12px 12px',
+      themeLabel: dark ? 'Switch to light theme' : 'Switch to dark theme',
+      toggleTheme: () => this.setState({ theme: dark ? 'light' : 'dark' })
+    };
+  }
+}
+</script>
+</body>
+</html>
