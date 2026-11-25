@@ -32,7 +32,7 @@ A round is each distinct plan hash or HEAD SHA within a phase. The plan hash is 
 ## Code phase
 
 1. Commit everything. `git status --porcelain` must print nothing, untracked files included, so the reviewers see exactly HEAD.
-2. Write the diff: `git diff main...HEAD > .claude/plans/TAN-<n>.diff`.
+2. Write the diff against an up-to-date `main`: `git fetch origin main`, then `git diff origin/main...HEAD > .claude/plans/TAN-<n>.diff`. The local `main` may be behind, and its missing commits would show up in the diff as if they were this ticket's. If the fetch fails, stop and say so; never write the diff against a `main` that was not just fetched.
 3. Launch `code-correctness-reviewer` and `code-rules-reviewer` in parallel. Each prompt holds: the ticket key, the ticket text, the diff path, the plan path, the round number and, from round 2, the previous findings with how each one was resolved.
 4. Cross-check the findings, fix them in new commits (a new HEAD SHA is a new round), and start the next round from step 1.
 5. When the round is clean, run `gh pr create` with the review line in the body.
