@@ -257,3 +257,47 @@ describe('follow-up tickets', () => {
     expect(log.some((line) => line.includes('(note for a new ticket)'))).toBe(false)
   })
 })
+
+// The TAN-33 decoy run found a reviewer citing diff-file lines and the two code reviewers
+// rating the same hard-coded color differently. CC-5 (PR #11) found that a stale local
+// main adds already-merged commits to the review diff [TAN-56].
+describe('reviewer citations, severities and diff base', () => {
+  const codeReviewers = names.filter((name) => reviewers[name] === 'code')
+  const skill = () => read('.claude/skills/review-loop/SKILL.md')
+
+  it.each(codeReviewers)('@TAN-56 %s checks every cited line number against the file', (name) => {
+    const howTo = section(agent(name), 'How to work')
+    expect(howTo).toContain(
+      'Before reporting, check every cited line number against the file itself',
+    )
+    expect(howTo).toContain("The diff's line numbers are not file lines")
+    // The old wording was already there and did not work; it must not stand in for the new one.
+    expect(howTo).not.toContain('(not the diff line)')
+  })
+
+  it.each(codeReviewers)('@TAN-56 %s reads a diff against an up-to-date origin/main', (name) => {
+    const received = section(agent(name), 'What you receive')
+    expect(received).toContain('the branch against an up-to-date `origin/main`')
+    expect(received).not.toContain('the branch against `main`')
+  })
+
+  it('@TAN-56 code-rules-reviewer rates hard-coded colors and UI text as blockers', () => {
+    const severity = lines(section(agent('code-rules-reviewer'), 'Severity'))
+    const blocker = severity.find((line) => line.startsWith('- **blocker**:'))
+    const major = severity.find((line) => line.startsWith('- **major**:'))
+    expect(blocker).toContain('a hard-coded color')
+    expect(blocker).toContain('a hard-coded UI string')
+    expect(major).toBeDefined()
+    expect(major).not.toContain('hard-coded')
+  })
+
+  it('@TAN-56 the code phase writes the diff against an up-to-date origin/main', () => {
+    const codePhase = section(skill(), 'Code phase')
+    const fetch = codePhase.indexOf('`git fetch origin main`')
+    const diff = codePhase.indexOf('`git diff origin/main...HEAD > .claude/plans/TAN-<n>.diff`')
+    expect(fetch).toBeGreaterThan(-1)
+    expect(diff).toBeGreaterThan(fetch)
+    expect(codePhase).toContain('If the fetch fails, stop and say so')
+    expect(skill()).not.toContain('git diff main...HEAD')
+  })
+})
