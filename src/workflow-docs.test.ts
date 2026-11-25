@@ -267,15 +267,19 @@ describe('workflow docs', () => {
           'Open with Read every image in `docs/mockups/`',
           'visible difference',
           'that is not among those decisions is a **major**',
-          'is also a **major**',
-          'is also a **major**, and so is a plan that touches a screen state with no image in `docs/mockups/`: it waits for its design ticket',
+          'but names none is also a **major**',
+          'Whether or not the ticket names a mockup, a plan that changes a screen state with no image in `docs/mockups/` is a **major**: it waits for its design ticket',
         ]) {
           expect(check).toContain(text)
         }
       })
 
       it('@TAN-90 the review-loop plan phase mentions the images', () => {
-        expect(section(skill, 'Plan phase')).toContain('`docs/mockups/`')
+        const planPhase = section(skill, 'Plan phase')
+        expect(planPhase).toContain('`docs/mockups/`')
+        expect(planPhase).toContain(
+          'Whether or not the ticket names a mockup, a plan that changes a screen state with no image there waits for its design ticket',
+        )
       })
 
       it('@TAN-90 the mockups README says how to regenerate them and where departures live', () => {
