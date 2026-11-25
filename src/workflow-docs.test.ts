@@ -268,7 +268,7 @@ describe('workflow docs', () => {
           'visible difference',
           'that is not among those decisions is a **major**',
           'is also a **major**',
-          'a screen state with no image in `docs/mockups/`: it waits for its design ticket',
+          'is also a **major**, and so is a plan that touches a screen state with no image in `docs/mockups/`: it waits for its design ticket',
         ]) {
           expect(check).toContain(text)
         }
