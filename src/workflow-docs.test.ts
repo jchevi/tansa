@@ -300,6 +300,97 @@ describe('workflow docs', () => {
     })
   })
 
+  // Every chat starts with a check of the Jira board, and the order of work is written
+  // where Claude reads it: critical bugs, then process tickets, then design and story [TAN-91].
+  describe('start of chat', () => {
+    const howToWork = () => section(claude, 'How to work').split(/\r?\n/)
+    // The bullet starting with the prefix, found before step 1.
+    const bullet = (prefix: string) => {
+      const lines = howToWork()
+      const at = lines.findIndex((l) => l.startsWith(prefix))
+      const first = lines.findIndex((l) => l.startsWith('1. '))
+      expect(at, prefix).toBeGreaterThan(-1)
+      expect(first).toBeGreaterThan(at)
+      return lines[at]
+    }
+
+    it('@TAN-91 How to work starts with the Start of chat check', () => {
+      const line = bullet('- **Start of chat:**')
+      for (const text of [
+        '`start-of-chat` skill',
+        'the active sprint',
+        'propose closing it and opening the next',
+        'Done tickets with no sprint or no Fix version (process tickets: sprint only)',
+        'the owner did not plan in',
+        'WIP',
+        'the next ticket in the approved order',
+      ]) {
+        expect(line).toContain(text)
+      }
+    })
+
+    it('@TAN-91 the order puts critical bugs, then process tickets, first', () => {
+      expect(bullet('- **Order:**')).toContain(
+        "bugs with priority High or Highest, then process tickets (label `build-log`), then each feature's design ticket and its story, then the rest",
+      )
+    })
+
+    it('@TAN-91 CLAUDE.md says where tickets belong', () => {
+      const line = bullet('- **Order:**')
+      for (const text of [
+        'Process tickets go into the active sprint when created and never get a Fix version',
+        'waits in the backlog with no sprint and no version',
+        "a ticket in Done belongs to the sprint in which it was finished and, unless it is a process ticket, to that sprint's Fix version",
+      ]) {
+        expect(line).toContain(text)
+      }
+    })
+
+    it('@TAN-91 the owner approves every sprint and version change', () => {
+      expect(bullet('- **Start of chat:**')).toContain(
+        'only after the owner approves them in the chat',
+      )
+    })
+
+    it('@TAN-91 review-loop follow-up tickets get their sprint and version by kind', () => {
+      const followUps = section(read('../.claude/skills/review-loop/SKILL.md'), 'Follow-up tickets')
+      expect(followUps).toContain('goes into the active sprint with no Fix version')
+      expect(followUps).toContain('created with no sprint and no Fix version')
+    })
+
+    it('@TAN-91 the start-of-chat skill covers the five parts', () => {
+      const skill = read('../.claude/skills/start-of-chat/SKILL.md')
+      expect(skill.split(/\r?\n/)).toContain('name: start-of-chat')
+      const steps = section(skill, 'Steps')
+        .split(/\r?\n/)
+        .filter((l) => /^\d+\. /.test(l))
+      const prefixes = [
+        '1. **Sprint:**',
+        '2. **Done with no sprint or no Fix version:**',
+        '3. **Not planned in:**',
+        '4. **WIP:**',
+        '5. **Next ticket:**',
+      ]
+      expect(steps).toHaveLength(prefixes.length)
+      prefixes.forEach((prefix, i) => {
+        expect(steps[i]?.startsWith(prefix), prefix).toBe(true)
+      })
+      expect(steps[2]).toContain('set after the sprint started')
+      expect(steps[4]).toContain('**Order:**')
+      expect(section(skill, 'Changes')).toContain('only after the owner approves')
+    })
+
+    it('@TAN-91 a Process row explains the Start of chat check', () => {
+      const row = section(decisions, 'Process')
+        .split(/\r?\n/)
+        .find((l) => l.startsWith('| 2026-11-25 |') && l.includes('Start of chat'))
+      expect(row).toBeDefined()
+      const why = row?.split(' | ').at(-1) ?? ''
+      expect(why).toContain('Sprint 1')
+      expect(why).toContain('a TANSA version says nothing about them')
+    })
+  })
+
   it('@TAN-28 CLAUDE.md and the decision log agree on merge commits', () => {
     expect(lifecycle).toContain('Merge with a merge commit (the only method the repo allows)')
     const decision = decisions.split(/\r?\n/).find((l) => l.includes('Merge commits only'))
