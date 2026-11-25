@@ -30,7 +30,10 @@ All data stays in your browser (IndexedDB). There is no backend.
 
 | Path            | What lives there                                        |
 | --------------- | ------------------------------------------------------- |
-| `docs/`         | Product spec and decision log                           |
+| `docs/`         | Product spec, decision log, mockups and QA packs        |
+| `docs/mockups/` | Mockup images per screen state; their sources in `source/` |
+| `docs/qa/`      | QA pack per story: prep for its exploratory session     |
+| `.claude/`      | Claude Code workflow: skills, reviewers and hooks       |
 | `e2e/`          | End-to-end tests (Playwright)                           |
 | `src/features/` | UI grouped by feature (charter, session, debrief, ...)  |
 | `src/data/`     | IndexedDB access; the only place that touches storage   |
@@ -51,3 +54,13 @@ Components never call IndexedDB directly: they go through `src/data`. This keeps
 ## Test data
 
 No real client names or data in code, tests, fixtures, docs or screenshots. Use fictional e-commerce examples (a made-up shop, products and customers).
+
+## Working with Claude Code
+
+TANSA is built with Claude Code. The workflow lives in the repo:
+
+- [`CLAUDE.md`](CLAUDE.md): the rules Claude reads in every chat (how to work, conventions, ticket lifecycle, Definition of Done, hard rules).
+- [`.claude/skills/start-of-chat`](.claude/skills/start-of-chat): the Jira board check at the start of every chat.
+- [`.claude/skills/review-loop`](.claude/skills/review-loop): the plan and code review procedure.
+- [`.claude/agents`](.claude/agents): its four read-only reviewers.
+- [`.claude/hooks`](.claude/hooks): the gates that enforce the loop (no code edits before a clean plan review, no PR before a clean code review).

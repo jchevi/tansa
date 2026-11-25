@@ -7,22 +7,15 @@ It is built by one person (a senior QA engineer, intermediate programmer) as a p
 ## Stack
 - Node 26 (pinned in `.nvmrc` and `engines`)
 - Vite + React + TypeScript (`strict: true`). TypeScript is pinned to 6.0 until typescript-eslint supports 7 (see `docs/decisions.md`).
-- IndexedDB for all data (local-first, no backend)
 - Vitest for unit tests, Playwright for end-to-end tests, GitHub Actions for CI (`.github/workflows/ci.yml`)
 - Cloudflare Workers (static assets, `wrangler.jsonc`) for PR previews, built by Workers Builds
 - Target browsers: Chrome and Edge on Windows (installable PWA from v1.0)
-
-## Commands
-- `npm run dev` · `npm run build` · `npm run preview`
-- `npm run lint` · `npm run typecheck` · `npm run format` · `npm run format:check`
-- `npm run test` (Vitest) · `npm run test:e2e` (Playwright)
 
 ## Where things are
 - `docs/spec.md`: MVP spec (requirements R1–R15, data model). Source of truth for behaviour.
 - `docs/decisions.md`: decision log with reasons. Its Mockup departures table lists every approved difference from the mockups until it is corrected.
 - Backlog: Jira, space TAN (https://jchevi.atlassian.net). Each ticket has Gherkin acceptance criteria.
-- `.claude/skills/review-loop`: the plan and code review procedure; `.claude/agents`: its four read-only reviewers; `.claude/skills/start-of-chat`: the board check at the start of every chat.
-- `src/features/*` UI by feature · `src/data` IndexedDB access · `src/i18n` strings · `src/theme` color tokens.
+- `README.md`: commands, folder structure and test conventions.
 
 ## How to work
 - **Start of chat:** before any ticket work, run the `start-of-chat` skill and report in a few lines: the active sprint (dates, goal; if it has ended or none is active, propose closing it and opening the next), Done tickets with no sprint or no Fix version (process tickets: sprint only), unfinished tickets with a sprint or Fix version the owner did not plan in, WIP, and the next ticket in the approved order. Claude proposes; sprint and version changes happen only after the owner approves them in the chat.
@@ -56,12 +49,10 @@ It is built by one person (a senior QA engineer, intermediate programmer) as a p
 ## Definition of Done
 - Acceptance criteria met.
 - Stories: a Playwright test titled `@TAN-x …`. Tasks: an automated check of their criteria (Vitest unit test, lint rule or CI check) referencing the key.
-- Lint, typecheck and tests green in CI.
+- Lint, typecheck and tests green in CI: `main` only accepts a PR whose `checks` and `e2e` jobs pass.
 - Stories: an exploratory session on the PR preview (QA column), with no open bugs, before merging.
 - PR merged with the key in branch and title.
 - Preview deployed.
-
-TAN-9 to TAN-11 bootstrapped the tooling. From TAN-12 on, every ticket meets the full Definition of Done: `main` only accepts a PR whose `checks` and `e2e` jobs pass.
 
 ## Hard rules
 - **Local-first:** session content (charters, notes, bugs, screenshots) never leaves the browser. No network calls with session data. Analytics and error tracking (v1.0) must never include session content.
