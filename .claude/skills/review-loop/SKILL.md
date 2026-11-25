@@ -67,6 +67,7 @@ The same shape for review minors, out-of-scope work and Definition of Done excep
 - Description: **Goal**; **Why**, with the source ticket and the finding ids; **Scope**; acceptance criteria in Gherkin; **Verification**.
 - Parent: the epic of the area. Tasks get the label `tech-debt`, `a11y` or `build-log`.
 - A defect is a Bug. A Story that needs a spec decision says so in its Why.
+- Sprint and version: a process ticket (label `build-log`) goes into the active sprint with no Fix version; any other follow-up is created with no sprint and no Fix version and waits in the backlog until the owner plans it in (`CLAUDE.md`, How to work).
 - After `gh pr create`, add the PR link to each ticket's Why.
 
 ## Owner reset
