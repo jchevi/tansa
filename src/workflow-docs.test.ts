@@ -48,6 +48,31 @@ describe('workflow docs', () => {
     }
   })
 
+  // The hand-off prompt carries the follow-ups into the next chat, and it points at the
+  // written order instead of leaving a new chat to guess it [TAN-68].
+  it('@TAN-68 the hand-off prompt names its contents and where the order lives', () => {
+    const line = lifecycle.split(/\r?\n/).find((l) => l.startsWith('8. '))
+    for (const text of [
+      'in the approved order (How to work → **Order:**)',
+      'what merged',
+      'the order and the deferred items with their tickets',
+      'the ticket and lifecycle steps',
+    ]) {
+      expect(line).toContain(text)
+    }
+    const howToWork = section(claude, 'How to work').split(/\r?\n/)
+    expect(howToWork.some((l) => l.startsWith('- **Order:**'))).toBe(true)
+  })
+
+  // Step 8 is the last thing done for a ticket, after the sync [TAN-68].
+  it('@TAN-68 the hand-off is the last lifecycle step', () => {
+    const numbers = lifecycle
+      .split(/\r?\n/)
+      .map((l) => /^(\d+)\. /.exec(l)?.[1])
+      .filter((n) => n !== undefined)
+    expect(numbers).toEqual(['1', '2', '3', '4', '5', '6', '7', '8'])
+  })
+
   // A numbered step's own line and its indented sub-lines, up to the next step, in the
   // Ticket lifecycle unless another section is given [TAN-80, TAN-88].
   function stepBlock(step: number, text: string = lifecycle): string[] {
