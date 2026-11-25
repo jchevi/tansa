@@ -375,6 +375,7 @@ describe('workflow docs', () => {
       prefixes.forEach((prefix, i) => {
         expect(steps[i]?.startsWith(prefix), prefix).toBe(true)
       })
+      expect(steps[2]?.startsWith('3. **Not planned in:** tickets not in Done only.')).toBe(true)
       expect(steps[2]).toContain('set after the sprint started')
       expect(steps[4]).toContain('**Order:**')
       expect(section(skill, 'Changes')).toContain('only after the owner approves')
