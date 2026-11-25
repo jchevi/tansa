@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TANSA · History</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=Zen+Kaku+Gothic+New:wght@400;500;700&amp;family=Zen+Maru+Gothic:wght@500;700;900&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#E9673A}a:hover{color:#C9532B}
+button{font-family:inherit}
+button:focus-visible,a:focus-visible{outline:2px solid #E9673A;outline-offset:3px}
+.tm{transition:transform .6s cubic-bezier(.65,0,.35,1),opacity .4s ease}
+.tm-core{transform-box:fill-box;transform-origin:center}
+@media (prefers-reduced-motion: reduce){.tm{transition:none}}
+</style>
+</helmet>
+<div style="{{rootStyle}}">
+<div style="position: relative; flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 24px 0">
+<div style="display: flex; align-items: center; gap: 10px">
+<nav aria-label="Main navigation" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px 8px 6px 18px; border-radius: 28px; background: var(--card); box-shadow: 0 0 0 1px var(--hair)">
+<a href="Home.dc.html" aria-label="tansa · Home" title="Home" style="min-height: 40px; display: inline-flex; align-items: center; font-family: 'Zen Maru Gothic', sans-serif; font-weight: 900; font-size: 22px; letter-spacing: 0.04em; color: var(--ink); text-decoration: none; margin-right: 14px">tansa</a>
+<a href="Alt6-Combinada.dc.html" style="min-height: 40px; display: inline-flex; align-items: center; padding: 0 14px; border-radius: 20px; color: var(--muted); font-size: 14px; text-decoration: none">Session</a>
+<a href="#" aria-current="page" style="min-height: 40px; display: inline-flex; align-items: center; gap: 8px; padding: 0 14px; border-radius: 20px 20px 20px 4px; background: #E9673A26; color: var(--ink); font-size: 14px; font-weight: 700; text-decoration: none"><span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: #E9673A"></span>History</a>
+</nav>
+<a href="NuevaSesion.dc.html" aria-label="New session" title="New session" style="width: 52px; height: 52px; border-radius: 26px 26px 26px 8px; background: #E9673A; color: #1B2029; display: inline-flex; align-items: center; justify-content: center; text-decoration: none"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg></a>
+</div>
+</header>
+
+<div style="position: fixed; left: 20px; bottom: 20px; z-index: 2; display: flex; flex-direction: column; gap: 2px; padding: 4px; border-radius: 26px 26px 26px 8px; background: var(--card); box-shadow: 0 0 0 1px var(--hair)">
+<button type="button" onClick="{{toggleTheme}}" aria-label="{{themeLabel}}" title="{{themeLabel}}" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: transparent; color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24">
+<mask id="tansa-theme-mask"><rect x="0" y="0" width="24" height="24" fill="#fff"/><circle class="tm" cx="18" cy="6" r="7" fill="#000" style="{{maskStyle}}"/></mask>
+<g class="tm tm-core" style="{{sunGroupStyle}}">
+<circle cx="12" cy="12" r="8" fill="currentColor" mask="url(#tansa-theme-mask)"/>
+<g class="tm" style="{{raysStyle}}" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 1.5v2M12 20.5v2M1.5 12h2M20.5 12h2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M4.6 19.4L6 18M18 6l1.4-1.4"/></g>
+</g>
+</svg>
+</button>
+<a href="#" aria-label="Settings" title="Settings" style="width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--muted)"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
+</div>
+
+<main style="flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; padding: 40px 32px 48px">
+<div style="width: 100%; max-width: 980px; display: flex; flex-direction: column; gap: 28px">
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.14em; color: #C9532B">YOUR SESSIONS</span>
+<h1 style="margin: 0; font-family: 'Zen Maru Gothic', sans-serif; font-weight: 900; font-size: 46px; line-height: 1.2; color: var(--ink)">History</h1>
+</div>
+
+<sc-if value="{{hasSessions}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 28px">
+
+<section aria-label="Session in progress" style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; padding: 20px 24px; border-radius: 28px 28px 28px 6px; background: #E9673A1F; box-shadow: inset 0 0 0 1px #E9673A66">
+<svg aria-hidden="true" width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="var(--hair)" stroke-width="2"/><circle cx="22" cy="22" r="18" fill="none" stroke="#E9673A" stroke-width="5" stroke-linecap="round" stroke-dasharray="70 113" transform="rotate(-92 22 22)"/></svg>
+<div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; letter-spacing: 0.12em; color: var(--muted)">IN PROGRESS · <span style="font-family: 'IBM Plex Mono', monospace; letter-spacing: 0">37:12 of 60 min</span></span>
+<span style="font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 20px; color: var(--ink)">Explore the cart and promo codes</span>
+</div>
+<a href="Alt6-Combinada.dc.html" style="min-height: 48px; display: inline-flex; align-items: center; padding: 0 22px; border-radius: 24px 24px 24px 6px; background: #E9673A; color: #1B2029; font-size: 15px; font-weight: 700; text-decoration: none">Resume →</a>
+</section>
+
+<section aria-labelledby="h-list" style="display: flex; flex-direction: column; gap: 12px">
+<h2 id="h-list" style="margin: 0; font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 18px; color: var(--ink)">Past sessions · {{count}}</h2>
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 720px; border-collapse: separate; border-spacing: 0 8px">
+<thead>
+<tr style="text-align: left; font-size: 12px; letter-spacing: 0.12em; color: var(--muted)">
+<th scope="col" style="padding: 0 16px; font-weight: 400">DATE</th>
+<th scope="col" style="padding: 0 16px; font-weight: 400">CHARTER</th>
+<th scope="col" style="padding: 0 16px; font-weight: 400">DURATION</th>
+<th scope="col" style="padding: 0 16px; font-weight: 400">STATUS</th>
+<th scope="col" style="padding: 0 16px; font-weight: 400"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Action</span></th>
+</tr>
+</thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+<tr style="background: var(--card)">
+<td style="padding: 16px; border-radius: 18px 0 0 18px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--muted); white-space: nowrap">{{r.date}}</td>
+<td style="padding: 16px; min-width: 0">
+<span style="display: block; font-size: 16px; font-weight: 500; color: var(--ink)">{{r.explore}}</span>
+<span style="display: block; margin-top: 2px; font-size: 13px; color: var(--muted)">{{r.findings}}</span>
+</td>
+<td style="padding: 16px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--ink); white-space: nowrap">{{r.duration}}</td>
+<td style="padding: 16px"><span style="{{r.statusStyle}}"><span aria-hidden="true" style="{{r.dot}}"></span>{{r.status}}</span></td>
+<td style="padding: 16px; border-radius: 0 18px 18px 0; text-align: right"><a href="Alt6-Combinada.dc.html" aria-label="{{r.openLabel}}" style="min-height: 44px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 22px 22px 22px 6px; box-shadow: inset 0 0 0 1px var(--hair); color: var(--ink); font-size: 14px; text-decoration: none">Open</a></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+
+</div>
+</sc-if>
+
+<sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
+<section aria-label="No sessions" style="display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 72px 24px; text-align: center">
+<svg aria-hidden="true" width="140" height="140" viewBox="0 0 140 140"><path d="M108 40A52 52 0 1 0 116 82" fill="none" stroke="var(--ink)" stroke-width="9" stroke-linecap="round"/><circle cx="122" cy="58" r="7" fill="#E9673A"/></svg>
+<h2 style="margin: 0; font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 26px; color: var(--ink)">No sessions yet</h2>
+<p style="margin: 0; max-width: 420px; font-size: 15px; line-height: 1.6; color: var(--muted)">Write a charter and start exploring. Everything stays in this browser.</p>
+<a href="NuevaSesion.dc.html" style="min-height: 48px; display: inline-flex; align-items: center; padding: 0 22px; border-radius: 24px 24px 24px 6px; background: var(--primary); color: var(--onPrimary); font-size: 15px; font-weight: 700; text-decoration: none">Start your first session →</a>
+</section>
+</sc-if>
+
+</div>
+</main>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"empty":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { theme: null };
+  }
+  renderVals() {
+    const theme = this.state.theme || this.props.theme || 'light';
+    const dark = theme === 'dark';
+    const P = dark
+      ? { bg: '#1B2029', card: '#232A35', ink: '#ECE6D8', muted: '#A9ADB4', hair: '#343C49', primary: '#E9673A', onPrimary: '#1B2029' }
+      : { bg: '#F3EFE6', card: '#FBF9F4', ink: '#262D3A', muted: '#5E6470', hair: '#DDD6C8', primary: '#262D3A', onPrimary: '#F3EFE6' };
+    const rootStyle = '--bg:' + P.bg + ';--card:' + P.card + ';--ink:' + P.ink + ';--muted:' + P.muted + ';--hair:' + P.hair + ';--primary:' + P.primary + ';--onPrimary:' + P.onPrimary + ';position:relative;width:100%;min-height:960px;box-sizing:border-box;display:flex;background:' + P.bg + ';color:' + P.ink + ';font-family:"Zen Kaku Gothic New",system-ui,sans-serif';
+    const ST = {
+      debrief: { label: 'In debrief', color: '#DFA23C' },
+      closed: { label: 'Closed', color: '#7C876D' }
+    };
+    const S = [
+      { date: '2026-10-27', explore: 'user sign-up with email and social login', findings: '2 bugs · 3 issues · 7 notes', real: 64, target: 60, st: 'debrief' },
+      { date: '2026-10-24', explore: 'product search with combined filters', findings: '1 bug · 1 issue · 9 notes', real: 58, target: 60, st: 'closed' },
+      { date: '2026-10-22', explore: 'guest checkout', findings: '3 bugs · 2 issues · 5 notes', real: 91, target: 90, st: 'closed' },
+      { date: '2026-10-20', explore: 'stock alerts on the product page', findings: '0 bugs · 1 issue · 6 notes', real: 45, target: 45, st: 'closed' }
+    ];
+    const rows = S.map((s) => ({
+      date: s.date,
+      explore: s.explore,
+      findings: s.findings,
+      duration: s.real + ' / ' + s.target + ' min',
+      status: ST[s.st].label,
+      openLabel: 'Open session: ' + s.explore,
+      dot: 'width:8px;height:8px;border-radius:50%;background:' + ST[s.st].color,
+      statusStyle: 'display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border-radius:14px 14px 14px 3px;font-size:13px;font-weight:500;color:' + P.ink + ';background:' + ST[s.st].color + (dark ? '40' : '2E')
+    }));
+    const empty = !!this.props.empty;
+    return {
+      rootStyle,
+      rows,
+      count: rows.length,
+      hasSessions: !empty,
+      isEmpty: empty,
+      maskStyle: dark ? 'transform:translate(10px,-10px)' : 'transform:translate(-4px,3px)',
+      sunGroupStyle: dark ? 'transform:rotate(90deg) scale(0.62)' : 'transform:rotate(0deg) scale(1)',
+      raysStyle: dark ? 'opacity:1;transform:scale(1.55);transform-origin:12px 12px' : 'opacity:0;transform:scale(0.6);transform-origin:12px 12px',
+      themeLabel: dark ? 'Switch to light theme' : 'Switch to dark theme',
+      toggleTheme: () => this.setState({ theme: dark ? 'light' : 'dark' })
+    };
+  }
+}
+</script>
+</body>
+</html>

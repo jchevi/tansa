@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TANSA · Home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=Zen+Kaku+Gothic+New:wght@400;500;700&amp;family=Zen+Maru+Gothic:wght@500;700;900&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#E9673A}a:hover{color:#C9532B}
+button{font-family:inherit}
+button:focus-visible,a:focus-visible{outline:2px solid #E9673A;outline-offset:3px}
+.rake{stroke-dasharray:1;stroke-dashoffset:1;animation:rake 6.5s cubic-bezier(.37,0,.63,1) forwards}
+.rock{opacity:0;animation:settle 3.5s ease-in-out forwards}
+.garden{transition:opacity 3s ease-in-out}
+.garden.leaving{opacity:0}
+@keyframes rake{to{stroke-dashoffset:0}}
+@keyframes settle{to{opacity:1}}
+.tm{transition:transform .6s cubic-bezier(.65,0,.35,1),opacity .4s ease}
+.tm-core{transform-box:fill-box;transform-origin:center}
+@media (prefers-reduced-motion: reduce){.rake{animation:none;stroke-dashoffset:0}.rock{animation:none;opacity:1}.tm{transition:none}}
+</style>
+</helmet>
+<div style="{{rootStyle}}">
+
+<svg aria-hidden="true" viewBox="0 0 1440 960" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none">
+<defs>
+<filter id="tansa-ink" x="-30%" y="-30%" width="160%" height="160%">
+<feTurbulence type="fractalNoise" baseFrequency="0.016" numOctaves="3" seed="11" result="noise"/>
+<feDisplacementMap in="SourceGraphic" in2="noise" scale="28" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+<feGaussianBlur in="rough" stdDeviation="3.2"/>
+</filter>
+<radialGradient id="ink-kaba"><stop offset="0" stop-color="#E9673A" stop-opacity="0.95"/><stop offset="0.65" stop-color="#E9673A" stop-opacity="0.7"/><stop offset="1" stop-color="#E9673A" stop-opacity="0.18"/></radialGradient>
+<radialGradient id="ink-yamabato"><stop offset="0" stop-color="#7C876D" stop-opacity="0.95"/><stop offset="0.65" stop-color="#7C876D" stop-opacity="0.7"/><stop offset="1" stop-color="#7C876D" stop-opacity="0.18"/></radialGradient>
+<radialGradient id="ink-yamabuki"><stop offset="0" stop-color="#E4B53A" stop-opacity="0.95"/><stop offset="0.65" stop-color="#E4B53A" stop-opacity="0.7"/><stop offset="1" stop-color="#E4B53A" stop-opacity="0.18"/></radialGradient>
+<radialGradient id="ink-hiwacha"><stop offset="0" stop-color="#A59A3B" stop-opacity="0.95"/><stop offset="0.65" stop-color="#A59A3B" stop-opacity="0.7"/><stop offset="1" stop-color="#A59A3B" stop-opacity="0.18"/></radialGradient>
+</defs>
+<sc-if value="{{showA}}" hint-placeholder-val="{{ true }}">
+<g class="{{gardenClass}}">
+<g fill="none" stroke="{{ringColor}}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+<sc-for list="{{contours}}" as="c" hint-placeholder-count="0">
+<path class="rake" pathLength="1" d="{{c.d}}" style="{{c.style}}"/>
+</sc-for>
+</g>
+<g filter="url(#tansa-ink)" opacity="{{rockOpacity}}">
+<sc-for list="{{rocks}}" as="r" hint-placeholder-count="0">
+<path class="rock" d="{{r.d}}" fill="{{r.fill}}"/>
+</sc-for>
+</g>
+</g>
+</sc-if>
+<sc-if value="{{showB}}" hint-placeholder-val="{{ false }}">
+<g class="{{gardenClass}}">
+<g fill="none" stroke="{{ringColor}}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+<sc-for list="{{contours}}" as="c" hint-placeholder-count="0">
+<path class="rake" pathLength="1" d="{{c.d}}" style="{{c.style}}"/>
+</sc-for>
+</g>
+<g filter="url(#tansa-ink)" opacity="{{rockOpacity}}">
+<sc-for list="{{rocks}}" as="r" hint-placeholder-count="0">
+<path class="rock" d="{{r.d}}" fill="{{r.fill}}"/>
+</sc-for>
+</g>
+</g>
+</sc-if>
+</svg>
+
+<main style="position: relative; flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 36px; padding: 48px 24px">
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center">
+<svg aria-hidden="true" width="96" height="96" viewBox="0 0 140 140"><path d="M108 40A52 52 0 1 0 116 82" fill="none" stroke="var(--ink)" stroke-width="9" stroke-linecap="round"/><circle cx="122" cy="58" r="7" fill="#E9673A"/></svg>
+<h1 style="margin: 0; font-family: 'Zen Maru Gothic', sans-serif; font-weight: 900; font-size: 64px; line-height: 1; letter-spacing: 0.04em; color: var(--ink)">tansa</h1>
+<p style="margin: 0; font-size: 16px; color: var(--muted)">探査 · exploratory testing sessions</p>
+</div>
+
+<nav aria-label="Main menu" style="width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 8px; padding: 10px; box-sizing: border-box; border-radius: 34px 34px 34px 10px; background: var(--card); box-shadow: 0 0 0 1px var(--hair), 0 16px 40px rgba(20, 24, 32, 0.10)">
+
+<sc-if value="{{running}}" hint-placeholder-val="{{ true }}">
+<a href="Alt6-Combinada.dc.html" style="min-height: 88px; display: flex; align-items: center; gap: 18px; padding: 16px 22px; border-radius: 26px 26px 26px 8px; background: #E9673A; color: #1B2029; text-decoration: none">
+<svg aria-hidden="true" width="40" height="40" viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="#1B202933" stroke-width="2"/><circle cx="22" cy="22" r="18" fill="none" stroke="#1B2029" stroke-width="5" stroke-linecap="round" stroke-dasharray="70 113" transform="rotate(-92 22 22)"/></svg>
+<span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<span style="font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 20px">Resume session</span>
+<span style="font-size: 14px; opacity: 0.85">the cart and promo codes ·<span style="font-family: 'IBM Plex Mono', monospace">37:12</span></span>
+</span>
+<span aria-hidden="true" style="font-size: 22px">→</span>
+</a>
+</sc-if>
+
+<sc-if value="{{notRunning}}" hint-placeholder-val="{{ false }}">
+<a href="NuevaSesion.dc.html" style="min-height: 88px; display: flex; align-items: center; gap: 18px; padding: 16px 22px; border-radius: 26px 26px 26px 8px; background: #E9673A; color: #1B2029; text-decoration: none">
+<span aria-hidden="true" style="width: 44px; height: 44px; border-radius: 22px 22px 22px 6px; background: #1B20291F; display: inline-flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg></span>
+<span style="flex: 1 1 auto; font-family: 'Zen Maru Gothic', sans-serif; font-weight: 700; font-size: 20px">New session</span>
+<span aria-hidden="true" style="font-size: 22px">→</span>
+</a>
+</sc-if>
+
+<div style="display: flex; gap: 8px">
+<sc-if value="{{running}}" hint-placeholder-val="{{ true }}">
+<a href="NuevaSesion.dc.html" style="flex: 1 1 0; min-width: 0; min-height: 96px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding: 16px; border-radius: 22px 22px 22px 6px; background: var(--surface); color: var(--ink); text-decoration: none"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg><span style="font-size: 15px; font-weight: 700">New session</span></a>
+</sc-if>
+<a href="Sesiones.dc.html" style="flex: 1 1 0; min-width: 0; min-height: 96px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding: 16px; border-radius: 22px 22px 22px 6px; background: var(--surface); color: var(--ink); text-decoration: none"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg><span style="font-size: 15px; font-weight: 700">History</span></a>
+<a href="#" style="flex: 1 1 0; min-width: 0; min-height: 96px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding: 16px; border-radius: 22px 22px 22px 6px; background: var(--surface); color: var(--ink); text-decoration: none"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span style="font-size: 15px; font-weight: 700">Settings</span></a>
+</div>
+
+<div style="display: flex; justify-content: center">
+<button type="button" onClick="{{toggleTheme}}" aria-label="{{themeLabel}}" title="{{themeLabel}}" style="min-height: 44px; display: inline-flex; align-items: center; gap: 10px; padding: 0 16px; border-radius: 22px; border: none; background: transparent; color: var(--muted); font-size: 14px; cursor: pointer">
+<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24">
+<mask id="tansa-theme-mask"><rect x="0" y="0" width="24" height="24" fill="#fff"/><circle class="tm" cx="18" cy="6" r="7" fill="#000" style="{{maskStyle}}"/></mask>
+<g class="tm tm-core" style="{{sunGroupStyle}}">
+<circle cx="12" cy="12" r="8" fill="currentColor" mask="url(#tansa-theme-mask)"/>
+<g class="tm" style="{{raysStyle}}" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 1.5v2M12 20.5v2M1.5 12h2M20.5 12h2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M4.6 19.4L6 18M18 6l1.4-1.4"/></g>
+</g>
+</svg>
+{{themeText}}
+</button>
+</div>
+
+</nav>
+</main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"running":{"editor":"boolean","default":true},"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { theme: null, cycle: 0, leaving: false, garden: this.buildGarden(this.randomRocks()) };
+  }
+  componentDidMount() {
+    let reduce = false;
+    try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { reduce = false; }
+    if (reduce) return;
+    this.timers = [];
+    const loop = () => {
+      this.timers.push(setTimeout(() => this.setState({ leaving: true }), 26000));
+      this.timers.push(setTimeout(() => {
+        this.setState({ leaving: false, cycle: this.state.cycle + 1, garden: this.buildGarden(this.randomRocks()) });
+        loop();
+      }, 29500));
+    };
+    loop();
+  }
+  componentWillUnmount() {
+    (this.timers || []).forEach((t) => clearTimeout(t));
+  }
+  randomRocks() {
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    const TONES = ['kaba', 'yamabato', 'yamabuki', 'hiwacha'];
+    const tones = TONES.slice().sort(() => Math.random() - 0.5);
+    const shape = () => ({ a1: rnd(0.05, 0.11), p1: rnd(0, 6.28), a2: rnd(0.03, 0.07), p2: rnd(0, 6.28) });
+    const side = Math.random() < 0.5 ? 'left' : 'right';
+    const xIn = (s, R) => (s === 'left' ? rnd(-30, 190 - R * 0.3) : rnd(1250 + R * 0.3, 1470));
+    const R1 = rnd(120, 165), R2 = rnd(60, 95), R3 = rnd(80, 140);
+    const y1 = rnd(60, 900);
+    let y2 = y1 + (y1 < 480 ? 1 : -1) * rnd(300, 400);
+    y2 = Math.max(20, Math.min(940, y2));
+    const other = side === 'left' ? 'right' : 'left';
+    return [
+      Object.assign({ cx: xIn(side, R1), cy: y1, R: R1, tone: tones[0] }, shape()),
+      Object.assign({ cx: xIn(side, R2), cy: y2, R: R2, tone: tones[1] }, shape()),
+      Object.assign({ cx: xIn(other, R3), cy: rnd(80, 880), R: R3, tone: tones[2] }, shape())
+    ];
+  }
+  buildGarden(ROCKS) {
+    const rad = (r, th) => r.R * (1 + r.a1 * Math.sin(2 * th + r.p1) + r.a2 * Math.sin(3 * th + r.p2));
+    const K = 24;
+    const field = (x, y) => {
+      let s = 0;
+      for (let q = 0; q < ROCKS.length; q++) {
+        const r = ROCKS[q];
+        const dx = x - r.cx, dy = y - r.cy;
+        const d = Math.hypot(dx, dy) - rad(r, Math.atan2(dy, dx));
+        s += Math.exp(-d / K);
+      }
+      return -K * Math.log(s);
+    };
+    const STEP = 10, X0 = -60, Y0 = -60, NX = 158, NY = 110;
+    const V = new Float64Array(NX * NY);
+    for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) V[j * NX + i] = field(X0 + i * STEP, Y0 + j * STEP);
+    const val = (i, j) => V[j * NX + i];
+    const key = (p) => Math.round(p[0] * 10) + ',' + Math.round(p[1] * 10);
+    const contours = [];
+    const LEVELS = 4;
+    for (let n = 0; n < LEVELS; n++) {
+      const L = 24 + n * 28;
+      const segs = [];
+      for (let j = 0; j < NY - 1; j++) {
+        for (let i = 0; i < NX - 1; i++) {
+          const a = val(i, j) - L, b = val(i + 1, j) - L, c = val(i + 1, j + 1) - L, d = val(i, j + 1) - L;
+          const idx = (a > 0 ? 8 : 0) | (b > 0 ? 4 : 0) | (c > 0 ? 2 : 0) | (d > 0 ? 1 : 0);
+          if (idx === 0 || idx === 15) continue;
+          const x = X0 + i * STEP, y = Y0 + j * STEP;
+          const T = [x + STEP * a / (a - b), y];
+          const Rt = [x + STEP, y + STEP * b / (b - c)];
+          const B = [x + STEP * d / (d - c), y + STEP];
+          const Lf = [x, y + STEP * a / (a - d)];
+          const add = (p, q) => segs.push([p, q]);
+          if (idx === 1 || idx === 14) add(Lf, B);
+          else if (idx === 2 || idx === 13) add(B, Rt);
+          else if (idx === 3 || idx === 12) add(Lf, Rt);
+          else if (idx === 4 || idx === 11) add(T, Rt);
+          else if (idx === 6 || idx === 9) add(T, B);
+          else if (idx === 7 || idx === 8) add(T, Lf);
+          else if (idx === 5) { add(T, Rt); add(Lf, B); }
+          else if (idx === 10) { add(T, Lf); add(B, Rt); }
+        }
+      }
+      const ends = new Map();
+      segs.forEach((s, si) => {
+        [0, 1].forEach((e) => {
+          const k = key(s[e]);
+          if (!ends.has(k)) ends.set(k, []);
+          ends.get(k).push(si);
+        });
+      });
+      const used = new Uint8Array(segs.length);
+      const next = (pt) => {
+        const list = ends.get(key(pt)) || [];
+        for (let z = 0; z < list.length; z++) {
+          const si = list[z];
+          if (used[si]) continue;
+          used[si] = 1;
+          const s = segs[si];
+          return key(s[0]) === key(pt) ? s[1] : s[0];
+        }
+        return null;
+      };
+      for (let si = 0; si < segs.length; si++) {
+        if (used[si]) continue;
+        used[si] = 1;
+        const line = [segs[si][0], segs[si][1]];
+        let p = next(line[line.length - 1]);
+        while (p) { line.push(p); p = next(p); }
+        p = next(line[0]);
+        while (p) { line.unshift(p); p = next(p); }
+        if (line.length < 6) continue;
+        let dStr = 'M' + line[0][0].toFixed(1) + ' ' + line[0][1].toFixed(1);
+        for (let z = 1; z < line.length; z++) dStr += 'L' + line[z][0].toFixed(1) + ' ' + line[z][1].toFixed(1);
+        contours.push({ d: dStr, style: 'animation-delay:' + (2.2 + n * 3.2).toFixed(2) + 's' });
+      }
+    }
+    const rocks = ROCKS.map((r) => {
+      let dStr = '';
+      for (let z = 0; z <= 72; z++) {
+        const th = (z / 72) * Math.PI * 2;
+        const rr = rad(r, th);
+        dStr += (z === 0 ? 'M' : 'L') + (r.cx + rr * Math.cos(th)).toFixed(1) + ' ' + (r.cy + rr * Math.sin(th)).toFixed(1);
+      }
+      return { d: dStr + 'Z', fill: 'url(#ink-' + r.tone + ')' };
+    });
+    return { contours, rocks };
+  }
+  renderVals() {
+    const theme = this.state.theme || this.props.theme || 'light';
+    const dark = theme === 'dark';
+    const P = dark
+      ? { bg: '#1B2029', surface: '#2A313D', card: '#232A35', ink: '#ECE6D8', muted: '#A9ADB4', hair: '#343C49', ring: '#4A5464' }
+      : { bg: '#F3EFE6', surface: '#EBE6DA', card: '#FBF9F4', ink: '#262D3A', muted: '#5E6470', hair: '#DDD6C8', ring: '#CFC6B4' };
+    const rootStyle = '--bg:' + P.bg + ';--surface:' + P.surface + ';--card:' + P.card + ';--ink:' + P.ink + ';--muted:' + P.muted + ';--hair:' + P.hair + ';position:relative;overflow:hidden;width:100%;min-height:960px;box-sizing:border-box;display:flex;background:' + P.bg + ';color:' + P.ink + ';font-family:"Zen Kaku Gothic New",system-ui,sans-serif';
+    const running = this.props.running !== false;
+    return {
+      rootStyle,
+      running,
+      notRunning: !running,
+      ringColor: P.ring,
+      contours: this.state.garden.contours,
+      rocks: this.state.garden.rocks,
+      showA: this.state.cycle % 2 === 0,
+      showB: this.state.cycle % 2 === 1,
+      gardenClass: this.state.leaving ? 'garden leaving' : 'garden',
+      rockOpacity: dark ? '0.55' : '0.75',
+      maskStyle: dark ? 'transform:translate(10px,-10px)' : 'transform:translate(-4px,3px)',
+      sunGroupStyle: dark ? 'transform:rotate(90deg) scale(0.62)' : 'transform:rotate(0deg) scale(1)',
+      raysStyle: dark ? 'opacity:1;transform:scale(1.55);transform-origin:12px 12px' : 'opacity:0;transform:scale(0.6);transform-origin:12px 12px',
+      themeText: dark ? 'Light theme' : 'Dark theme',
+      themeLabel: dark ? 'Switch to light theme' : 'Switch to dark theme',
+      toggleTheme: () => this.setState({ theme: dark ? 'light' : 'dark' })
+    };
+  }
+}
+</script>
+</body>
+</html>
