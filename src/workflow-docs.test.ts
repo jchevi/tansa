@@ -13,6 +13,17 @@ function section(markdown: string, heading: string): string {
   return markdown.slice(start, end === -1 ? undefined : end)
 }
 
+// One `key: value` field of the frontmatter block between the first two `---` lines
+// [TAN-105].
+function frontmatterField(markdown: string, key: string): string {
+  const lines = markdown.split(/\r?\n/)
+  const end = lines.indexOf('---', 1)
+  if (lines[0] !== '---' || end === -1) throw new Error('Frontmatter not found')
+  const line = lines.slice(1, end).find((l) => l.startsWith(`${key}: `))
+  if (line === undefined) throw new Error(`Frontmatter field "${key}" not found`)
+  return line.slice(key.length + 2)
+}
+
 describe('workflow docs', () => {
   const claude = read('../CLAUDE.md')
   const decisions = read('../docs/decisions.md')
@@ -329,15 +340,24 @@ describe('workflow docs', () => {
   // where Claude reads it: critical bugs, then process tickets, then design and story [TAN-91].
   describe('start of chat', () => {
     const howToWork = () => section(claude, 'How to work').split(/\r?\n/)
-    // The bullet starting with the prefix, found before step 1.
-    const bullet = (prefix: string) => {
-      const lines = howToWork()
+    // The bullet starting with the prefix, found before step 1. Both indexes are checked
+    // on their own, so a missing line fails with its name, not as a wrong order [TAN-105].
+    const bullet = (prefix: string, lines: string[] = howToWork()) => {
       const at = lines.findIndex((l) => l.startsWith(prefix))
       const first = lines.findIndex((l) => l.startsWith('1. '))
       expect(at, prefix).toBeGreaterThan(-1)
+      expect(first, 'step 1').toBeGreaterThan(-1)
       expect(first).toBeGreaterThan(at)
       return lines[at]
     }
+
+    it('@TAN-105 the ordering check fails on its own assertion when a line is missing', () => {
+      const without = (prefix: string) => howToWork().filter((l) => !l.startsWith(prefix))
+      expect(() => bullet('- **Start of chat:**', without('- **Start of chat:**'))).toThrow(
+        '- **Start of chat:**',
+      )
+      expect(() => bullet('- **Start of chat:**', without('1. '))).toThrow('step 1')
+    })
 
     it('@TAN-91 How to work starts with the Start of chat check', () => {
       const line = bullet('- **Start of chat:**')
@@ -385,7 +405,7 @@ describe('workflow docs', () => {
 
     it('@TAN-91 the start-of-chat skill covers the five parts', () => {
       const skill = read('../.claude/skills/start-of-chat/SKILL.md')
-      expect(skill.split(/\r?\n/)).toContain('name: start-of-chat')
+      expect(frontmatterField(skill, 'name')).toBe('start-of-chat')
       const steps = section(skill, 'Steps')
         .split(/\r?\n/)
         .filter((l) => /^\d+\. /.test(l))
@@ -424,9 +444,10 @@ describe('workflow docs', () => {
       section(claude, 'How to work')
         .split(/\r?\n/)
         .find((l) => l.startsWith('- **Order:**'))
-    const startOfChat = read('../.claude/skills/start-of-chat/SKILL.md')
+    // Read inside each test, so a missing file fails those tests, not the file [TAN-105].
+    const startOfChat = () => read('../.claude/skills/start-of-chat/SKILL.md')
     const step5 = () =>
-      section(startOfChat, 'Steps')
+      section(startOfChat(), 'Steps')
         .split(/\r?\n/)
         .find((l) => l.startsWith('5. '))
     const criteria = 'dependencies, what unblocks or saves the most time on later work, risk, size'
@@ -470,7 +491,7 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-102 start-of-chat has a Changes bullet for the rank', () => {
-      const rank = section(startOfChat, 'Changes')
+      const rank = section(startOfChat(), 'Changes')
         .split(/\r?\n/)
         .find((l) => l.startsWith('- Rank tickets to the approved order:'))
       expect(rank).toBeDefined()
@@ -486,6 +507,120 @@ describe('workflow docs', () => {
       const why = row?.split(' | ').at(-1) ?? ''
       expect(why).toContain('creation order')
       expect(why).toContain('one review per ticket')
+    })
+  })
+
+  // Sprints go through the connector, the order clauses are pinned, the owner's "it stays"
+  // answer is remembered, and the helpers fail on their own assertion [TAN-105].
+  describe('start-of-chat refinements', () => {
+    const skill = () => read('../.claude/skills/start-of-chat/SKILL.md')
+    const step = (n: number) => {
+      const line = section(skill(), 'Steps')
+        .split(/\r?\n/)
+        .find((l) => l.startsWith(`${String(n)}. `))
+      expect(line, `step ${String(n)}`).toBeDefined()
+      return line ?? ''
+    }
+    const changesBullet = (prefix: string) => {
+      const line = section(skill(), 'Changes')
+        .split(/\r?\n/)
+        .find((l) => l.startsWith(prefix))
+      expect(line, prefix).toBeDefined()
+      return line ?? ''
+    }
+    // The phrase the writer leaves and the reader skips on: one constant for both tests.
+    const confirmation = 'Start of chat: planned in'
+
+    it('@TAN-105 the skill closes and opens sprints through manageJiraSprint', () => {
+      const line = changesBullet('- Close, create or start a sprint:')
+      for (const text of [
+        'manageJiraSprint',
+        '`create` on board 2 with the name, goal and dates',
+        '`addIssues` with the unfinished tickets',
+        'so none falls into the backlog',
+        'closing cannot be undone',
+      ]) {
+        expect(line).toContain(text)
+      }
+      const at = ['`create`', '`addIssues`', '`close`', '`start`'].map((action) => {
+        const index = line.indexOf(action)
+        expect(index, action).toBeGreaterThan(-1)
+        return index
+      })
+      expect(at).toEqual([...at].sort((a, b) => a - b))
+    })
+
+    it('@TAN-105 the skill no longer says there is no connector call for sprints', () => {
+      expect(skill()).not.toContain('no connector call')
+    })
+
+    it('@TAN-105 start-of-chat step 5 keeps the story-order clause', () => {
+      expect(step(5)).toContain(
+        `If the next ticket disagrees with a story's "Order: n of 18" line, say so instead of picking one`,
+      )
+    })
+
+    it('@TAN-105 a proposed order is one of the numbered proposals', () => {
+      expect(step(5)).toContain('A proposed order is one of the numbered proposals')
+      expect(step(5)).toContain("does not count against the report's line limit")
+    })
+
+    it('@TAN-105 both review triggers and the rank clause are pinned', () => {
+      const order = section(claude, 'How to work')
+        .split(/\r?\n/)
+        .find((l) => l.startsWith('- **Order:**'))
+      expect(order).toContain(
+        'when the chat did not start from a hand-off prompt with an approved order',
+      )
+      expect(step(5)).toContain('If there is no such prompt')
+      expect(step(5)).toContain('the board rank matches it')
+    })
+
+    it('@TAN-105 lifecycle step 8 names the Order rule once', () => {
+      const line = lifecycle.split(/\r?\n/).find((l) => l.startsWith('8. '))
+      expect(line).toBeDefined()
+      expect(line?.split('(How to work → **Order:**)')).toHaveLength(2)
+    })
+
+    it('@TAN-105 step 3 defines planned in and skips confirmed tickets', () => {
+      for (const text of [
+        'A ticket is planned in when the owner chose its sprint and Fix version',
+        'is planned in by `CLAUDE.md` → **Order:**',
+        'waits in the backlog with neither until the owner plans it in',
+        'Before listing one, read its comments',
+        `skip it when its latest comment starting \`${confirmation}\``,
+        'names its open sprint (or backlog) and its Fix version (or no Fix version)',
+      ]) {
+        expect(step(3)).toContain(text)
+      }
+    })
+
+    it('@TAN-105 the skill records a confirmation as a Jira comment', () => {
+      const line = changesBullet('- Record that a ticket stays:')
+      expect(line).toContain('addOrEditJiraIssueComment')
+      expect(line).toContain(
+        `\`${confirmation} <open sprint or backlog>, <Fix version or no Fix version>, confirmed by the owner on <date>.\``,
+      )
+    })
+
+    it('@TAN-105 a Process row explains the start-of-chat refinements', () => {
+      const row = section(decisions, 'Process')
+        .split(/\r?\n/)
+        .find((l) => l.startsWith('| 2026-11-26 |') && l.includes('TAN-105'))
+      expect(row).toBeDefined()
+      // The Decision cell alone, since the Why names manageJiraSprint too.
+      const decision = row?.split(' | ')[1] ?? ''
+      expect(decision).toContain('manageJiraSprint')
+      expect(decision).toContain('Jira comment')
+      const why = row?.split(' | ').at(-1) ?? ''
+      expect(why).toContain('every chat')
+      expect(why).toContain('a label would not')
+    })
+
+    it('@TAN-105 frontmatterField reads a field and throws on a missing one', () => {
+      expect(frontmatterField('---\nname: x\n---\n', 'name')).toBe('x')
+      expect(() => frontmatterField('---\nname: x\n---\n', 'title')).toThrow('title')
+      expect(() => frontmatterField('name: x\n', 'name')).toThrow('Frontmatter not found')
     })
   })
 
