@@ -33,7 +33,7 @@ The prompt gives you the ticket key, the ticket text with its acceptance criteri
 
 - **blocker**: the plan breaks a hard rule, or an acceptance criterion cannot pass as planned.
 - **major**: a criterion is missing or changed, the plan contradicts the spec or a decision, or it resolves an ambiguity silently.
-- **minor**: anything else worth a note. Minors are not fixed in this PR; they become follow-up tickets the main agent creates.
+- **minor**: anything else worth a note. Minors are not fixed in this PR; they become follow-up tickets the main agent creates. The exception: a minor whose fix only changes text or a test the plan already writes (no new file, test case, step or acceptance criterion) may be fixed in the plan, and in the next round you mark it `resolved` if the fix holds.
 
 ## Output
 

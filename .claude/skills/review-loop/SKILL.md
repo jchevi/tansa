@@ -53,7 +53,7 @@ A round is each distinct plan hash or HEAD SHA within a phase. The plan hash is 
 ## Stop rule
 
 - A round is clean when neither reviewer reports an open blocker or major.
-- Minors are not fixed in this PR. Create the follow-up tickets yourself in Jira; the owner does not create them. Group the minors by area, one ticket per area (as TAN-35 to TAN-40). File plan minors before presenting the plan, and code minors before `gh pr create`. Put the keys in the review line; write "Minors: none" only when there are none. Pass them to the next round as deferred: deferred minors are not reopened and do not count toward escalation.
+- Minors are not fixed in this PR, with one exception: a plan-phase minor whose fix only changes text or a test the plan already writes (no new file, test case, step or acceptance criterion) may be fixed in the plan, then run one more round on the fixed plan before presenting it. List it in the review line after "fixed in plan", by finding id. Every other minor becomes a ticket. Create the follow-up tickets yourself in Jira; the owner does not create them. Group the minors by area, one ticket per area (as TAN-35 to TAN-40). File plan minors before presenting the plan, and code minors before `gh pr create`. Put the keys in the review line; write "Minors: none" only when there are none. Pass the filed ones to the next round as deferred: deferred minors are not reopened and do not count toward escalation. Pass the fixed ones as fixed, so the reviewer checks that the fix holds.
 - After 3 consecutive open rounds in a phase, stop and ask the owner what to do. A clean round resets the count, so a QA bounce-back or a plan change after a clean round starts again from zero.
 - Resuming a reviewer with `SendMessage` counts as a launch. The missing reviewer of the latest round can still be launched while its ref is current, so a round that stalled can be finished.
 - Escalate to the owner, without waiting for round 3:
@@ -85,8 +85,10 @@ Use `"phase":"code"` for the code phase. Never delete the log: the PR line and t
 One neutral line per phase in the PR body (and with the plan, for the plan phase), with no mention of AI:
 
 ```
-Plan review: <n> rounds, <n> open. Code review: <n> rounds, <n> open. Minors: <ticket keys, or none>
+Plan review: <n> rounds, <n> open. Code review: <n> rounds, <n> open. Minors: <ticket keys, then "fixed in plan" and the finding ids, or none>
 ```
+
+For example: `Minors: TAN-110; fixed in plan PF-2, PT-3`.
 
 ## Verdict line
 
