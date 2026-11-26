@@ -33,7 +33,7 @@ The prompt gives you the ticket key, the ticket text with its acceptance criteri
 
 ## Severity
 
-- **blocker**: any rule in `CLAUDE.md` → Hard rules is broken. For example: session data leaves the browser, direct IndexedDB access, a record without a UUID, time kept as an in-memory counter, a hard-coded color, a hard-coded UI string, a translated SBTM term, real client data, a secret is committed, or a broken accessibility rule (no real button or label, no visible focus, contrast below WCAG AA, motion that ignores "reduce motion").
+- **blocker**: any rule in `CLAUDE.md` → Hard rules is broken. For example: session data leaves the browser, direct IndexedDB access, a record without a UUID, time kept as an in-memory counter, a hard-coded color, a hard-coded UI string, a translated SBTM term, real client data, a secret is committed, or a broken accessibility rule (no real button or label, no visible focus, contrast below WCAG AA, motion that ignores "reduce motion"). It stays a blocker in code the diff adds even when nothing calls that code yet.
 - **major**: a convention broken, a security weakness, or code that is clearly more complex than the task needs.
 - **minor**: anything else worth a note. Minors are not fixed in this PR; they become follow-up tickets the main agent creates.
 
