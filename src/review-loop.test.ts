@@ -301,3 +301,78 @@ describe('reviewer citations, severities and diff base', () => {
     expect(skill()).not.toContain('git diff main...HEAD')
   })
 })
+
+// In the TAN-102 plan review four minors were fixed in the plan, because a ticket would only
+// have said "write it as planned", but the Stop rule had no exception and the two plan
+// reviewers read it differently. Plan-phase minors on text the plan already writes may now be
+// fixed in place; code-phase minors are still filed [TAN-107].
+describe('minors fixed in the plan', () => {
+  const skill = () => read('.claude/skills/review-loop/SKILL.md')
+  const planReviewers = names.filter((name) => reviewers[name] === 'plan')
+  const codeReviewers = names.filter((name) => reviewers[name] === 'code')
+  const minorLine = (name: Reviewer) =>
+    lines(section(agent(name), 'Severity')).find((line) => line.startsWith('- **minor**:'))
+
+  it('@TAN-107 the Stop rule lets a plan-phase minor on planned text be fixed in the plan', () => {
+    const stop = section(skill(), 'Stop rule')
+    for (const text of [
+      'with one exception: a plan-phase minor whose fix only changes text or a test the plan already writes',
+      '(no new file, test case, step or acceptance criterion) may be fixed in the plan',
+      'then run one more round on the fixed plan before presenting it',
+      'Every other minor becomes a ticket',
+    ]) {
+      expect(stop).toContain(text)
+    }
+  })
+
+  it('@TAN-107 the Stop rule says how the review line reports a fixed minor', () => {
+    expect(section(skill(), 'Stop rule')).toContain(
+      'List it in the review line after "fixed in plan", by finding id',
+    )
+    const reviewLine = section(skill(), 'Review line')
+    expect(reviewLine).toContain(
+      'Minors: <ticket keys, then "fixed in plan" and the finding ids, or none>',
+    )
+    expect(reviewLine).toContain('Minors: TAN-110; fixed in plan PF-2, PT-3')
+  })
+
+  it('@TAN-107 the old unconditional wording is gone and fixed minors are checked, not deferred', () => {
+    const stop = section(skill(), 'Stop rule')
+    expect(stop).not.toContain('- Minors are not fixed in this PR. Create')
+    expect(stop).not.toContain('Pass them to the next round as deferred')
+    expect(stop).toContain('Pass the filed ones to the next round as deferred')
+    expect(stop).toContain('Pass the fixed ones as fixed, so the reviewer checks that the fix holds')
+  })
+
+  it.each(planReviewers)('@TAN-107 %s allows a plan minor to be fixed in the plan', (name) => {
+    const minor = minorLine(name)
+    expect(minor).toBeDefined()
+    expect(minor).toContain(
+      '(no new file, test case, step or acceptance criterion) may be fixed in the plan',
+    )
+    expect(minor).toContain('mark it `resolved` if the fix holds')
+  })
+
+  it.each(codeReviewers)('@TAN-107 %s keeps every minor as a ticket', (name) => {
+    const minor = minorLine(name)
+    expect(minor).toBeDefined()
+    expect(minor).toContain('they become follow-up tickets the main agent creates')
+    expect(minor).not.toContain('fixed in the plan')
+  })
+
+  it('@TAN-107 a Process row records the rule and the TAN-55 row points to it', () => {
+    const log = lines(read('docs/decisions.md'))
+    const row = log.find(
+      (line) => line.startsWith('| 2026-11-26 |') && line.includes('(TAN-107)'),
+    )
+    expect(row).toBeDefined()
+    expect(row).toContain('fixed in the plan')
+    expect(row).toContain('write it as planned')
+    const tan55 = log.find(
+      (line) =>
+        line.startsWith('| 2026-11-09 |') &&
+        line.includes('Claude files every follow-up as a Jira ticket'),
+    )
+    expect(tan55).toContain('Superseded in part by the TAN-107 row below')
+  })
+})
