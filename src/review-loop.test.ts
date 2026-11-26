@@ -341,7 +341,9 @@ describe('minors fixed in the plan', () => {
     expect(stop).not.toContain('- Minors are not fixed in this PR. Create')
     expect(stop).not.toContain('Pass them to the next round as deferred')
     expect(stop).toContain('Pass the filed ones to the next round as deferred')
-    expect(stop).toContain('Pass the fixed ones as fixed, so the reviewer checks that the fix holds')
+    expect(stop).toContain(
+      'Pass the fixed ones as fixed, so the reviewer checks that the fix holds',
+    )
   })
 
   it.each(planReviewers)('@TAN-107 %s allows a plan minor to be fixed in the plan', (name) => {
@@ -362,9 +364,7 @@ describe('minors fixed in the plan', () => {
 
   it('@TAN-107 a Process row records the rule and the TAN-55 row points to it', () => {
     const log = lines(read('docs/decisions.md'))
-    const row = log.find(
-      (line) => line.startsWith('| 2026-11-26 |') && line.includes('(TAN-107)'),
-    )
+    const row = log.find((line) => line.startsWith('| 2026-11-26 |') && line.includes('(TAN-107)'))
     expect(row).toBeDefined()
     expect(row).toContain('fixed in the plan')
     expect(row).toContain('write it as planned')
