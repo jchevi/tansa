@@ -417,6 +417,78 @@ describe('workflow docs', () => {
     })
   })
 
+  // Within each group of the order, the next ticket comes from a review with reasons that
+  // the owner approves, not from creation order, and the Jira rank follows it [TAN-102].
+  describe('order within a group', () => {
+    const order = () =>
+      section(claude, 'How to work')
+        .split(/\r?\n/)
+        .find((l) => l.startsWith('- **Order:**'))
+    const startOfChat = read('../.claude/skills/start-of-chat/SKILL.md')
+    const step5 = () =>
+      section(startOfChat, 'Steps')
+        .split(/\r?\n/)
+        .find((l) => l.startsWith('5. '))
+    const criteria = 'dependencies, what unblocks or saves the most time on later work, risk, size'
+
+    it('@TAN-102 the Order rule chooses the next ticket in a group by a review the owner approves', () => {
+      for (const text of [
+        'Within each group the order comes from a review, not from creation order',
+        criteria,
+        'one reason per ticket',
+        'once the owner approves it',
+        'updates the Jira rank to match',
+      ]) {
+        expect(order()).toContain(text)
+      }
+    })
+
+    it('@TAN-102 the Order rule says when the review runs', () => {
+      expect(order()).toContain('The review runs at each hand-off (lifecycle step 8)')
+      expect(order()).toContain('the group has an open ticket that order does not list')
+    })
+
+    it('@TAN-102 the hand-off reviews the next group and updates the rank', () => {
+      const line = lifecycle.split(/\r?\n/).find((l) => l.startsWith('8. '))
+      expect(line).toContain("reviews the order of the next ticket's group")
+      expect(line).toContain('updates the Jira rank once the owner approves the order')
+    })
+
+    it('@TAN-102 start-of-chat step 5 follows the approved order or reviews the group', () => {
+      for (const text of [
+        'follow the order approved in the hand-off prompt',
+        'the group has an open ticket that order does not list',
+        'review the group',
+        criteria,
+        'one reason per ticket',
+        'Once the owner approves the order',
+        'the rank is updated to match',
+      ]) {
+        expect(step5()).toContain(text)
+      }
+      expect(step5()).not.toContain('by board rank (top to bottom) within each group')
+    })
+
+    it('@TAN-102 start-of-chat has a Changes bullet for the rank', () => {
+      const rank = section(startOfChat, 'Changes')
+        .split(/\r?\n/)
+        .find((l) => l.startsWith('- Rank tickets to the approved order:'))
+      expect(rank).toBeDefined()
+      expect(rank).toContain('rankBeforeIssue')
+      expect(rank).toContain('rankAfterIssue')
+    })
+
+    it('@TAN-102 a Process row explains the review', () => {
+      const row = section(decisions, 'Process')
+        .split(/\r?\n/)
+        .find((l) => l.startsWith('| 2026-11-26 |') && l.includes('TAN-102'))
+      expect(row).toBeDefined()
+      const why = row?.split(' | ').at(-1) ?? ''
+      expect(why).toContain('creation order')
+      expect(why).toContain('one review per ticket')
+    })
+  })
+
   it('@TAN-28 CLAUDE.md and the decision log agree on merge commits', () => {
     expect(lifecycle).toContain('Merge with a merge commit (the only method the repo allows)')
     const decision = decisions.split(/\r?\n/).find((l) => l.includes('Merge commits only'))
