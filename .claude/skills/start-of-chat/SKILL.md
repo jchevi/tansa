@@ -17,7 +17,7 @@ Each step is one search in Jira (project TAN, the Jira connector) and one line o
 2. **Done with no sprint or no Fix version:** tickets in Done with no sprint, or, unless they are process tickets, with no Fix version. For each one, name the sprint whose dates contain the day it reached Done (its history, or its resolution date) and that sprint's version. Process tickets need a sprint only.
 3. **Not planned in:** tickets not in Done only. Among them, process tickets outside the active sprint or with a Fix version, and other tickets with a sprint or Fix version set after the sprint started, or review-loop follow-ups (their Why names a source ticket and finding ids) that have one. Finished tickets are step 2. Claude works through the owner's Jira account, so Jira cannot say who set it: each one is a question to the owner, not a change. If a ticket's history cannot be read, say so and list it.
 4. **WIP:** more than one ticket In Progress, or a ticket In Progress with no `TAN-<n>-*` branch (`git branch -a`).
-5. **Next ticket:** the first ticket in the order of `CLAUDE.md`, How to work → **Order:**, by board rank (top to bottom) within each group. If it disagrees with a story's "Order: n of 18" line, say so instead of picking one.
+5. **Next ticket:** the first ticket in the order of `CLAUDE.md`, How to work → **Order:**. Within its group, follow the order approved in the hand-off prompt that started the chat; the board rank matches it. If there is no such prompt, or the group has an open ticket that order does not list, review the group: compare its open tickets (dependencies, what unblocks or saves the most time on later work, risk, size) and propose an order with one reason per ticket. Once the owner approves the order, it is the order, and the rank is updated to match (Changes). If the next ticket disagrees with a story's "Order: n of 18" line, say so instead of picking one.
 
 ## Report
 
@@ -29,6 +29,7 @@ Make a change only after the owner approves it in the chat. Then:
 
 - Move a ticket into a sprint or to the backlog: `transitionJiraIssue` with `sprintId` or `assignToBacklog`.
 - Set or clear a Fix version: `editJiraIssue` with `fixVersions`.
+- Rank tickets to the approved order: `editJiraIssue` with `rankBeforeIssue` or `rankAfterIssue`, top to bottom.
 - Close, create or start a sprint: there is no connector call for it, so give the owner the exact steps in Jira.
 
 Report what changed, ticket by ticket.
