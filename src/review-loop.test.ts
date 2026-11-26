@@ -376,3 +376,137 @@ describe('minors fixed in the plan', () => {
     expect(tan55).toContain('Superseded in part by the TAN-107 row below')
   })
 })
+
+// TAN-56 CR-1: the blocker examples left out some hard rules. TAN-56 CC-1: the citation test
+// pinned only the start of each sentence. TAN-107 CC-1: the fix-in-place guard blocked one
+// phrase only. The owner's open-ticket rule keeps process follow-ups from piling up [TAN-101].
+describe('hard rules, citations and open tickets', () => {
+  const skill = () => read('.claude/skills/review-loop/SKILL.md')
+  const claude = () => read('CLAUDE.md')
+  const codeReviewers = names.filter((name) => reviewers[name] === 'code')
+  const severityLines = (name: Reviewer) =>
+    lines(section(agent(name), 'Severity'))
+      .slice(2)
+      .filter((line) => line.trim() !== '')
+
+  // Each Hard rules bullet of CLAUDE.md, found by every phrase in `rule`, and the examples
+  // the code-rules-reviewer blocker line must give for it.
+  const hardRules = [
+    { rule: ['never leaves the browser'], blocker: ['session data leaves the browser'] },
+    {
+      rule: ['components never call IndexedDB directly', 'Every record has a UUID'],
+      blocker: ['direct IndexedDB access', 'a record without a UUID'],
+    },
+    { rule: ['never an in-memory counter'], blocker: ['time kept as an in-memory counter'] },
+    {
+      rule: ['No hard-coded colors', 'No hard-coded UI text'],
+      blocker: ['a hard-coded color', 'a hard-coded UI string'],
+    },
+    { rule: ['SBTM terms are never translated'], blocker: ['a translated SBTM term'] },
+    { rule: ['Public by default'], blocker: ['real client data'] },
+    { rule: ['Never commit secrets'], blocker: ['a secret is committed'] },
+    {
+      rule: ['Accessibility:'],
+      blocker: [
+        'a broken accessibility rule',
+        'no real button or label',
+        'no visible focus',
+        'contrast below WCAG AA',
+        'motion that ignores "reduce motion"',
+      ],
+    },
+  ]
+
+  it('@TAN-101 code-rules-reviewer rates every hard rule in CLAUDE.md as a blocker', () => {
+    const bullets = lines(section(claude(), 'Hard rules')).filter((line) => line.startsWith('- '))
+    expect(bullets).toHaveLength(hardRules.length)
+    for (const bullet of bullets) {
+      const matches = hardRules.filter(({ rule }) => rule.every((text) => bullet.includes(text)))
+      expect(matches, bullet).toHaveLength(1)
+    }
+    const severity = lines(section(agent('code-rules-reviewer'), 'Severity'))
+    const blocker = severity.find((line) => line.startsWith('- **blocker**:'))
+    const major = severity.find((line) => line.startsWith('- **major**:'))
+    expect(blocker).toContain('any rule in `CLAUDE.md` → Hard rules is broken')
+    expect(major).toBeDefined()
+    for (const text of hardRules.flatMap(({ blocker: examples }) => examples)) {
+      expect(blocker).toContain(text)
+      expect(major).not.toContain(text)
+    }
+    expect(section(agent('code-rules-reviewer'), 'What to check')).toContain('WCAG AA contrast')
+  })
+
+  it.each(codeReviewers)('@TAN-101 %s pins every clause of the citation rule', (name) => {
+    const howTo = section(agent(name), 'How to work')
+    expect(howTo).toContain(
+      'open the file at that line and confirm it holds what the finding describes',
+    )
+    expect(howTo).toContain(
+      'neither the line numbers of the diff file nor the counts in its `@@` hunk headers',
+    )
+  })
+
+  it.each(codeReviewers)('@TAN-101 %s minor line is exactly the TAN-55 sentence', (name) => {
+    const severity = severityLines(name)
+    expect(severity.map((line) => line.slice(0, line.indexOf(':') + 1))).toEqual([
+      '- **blocker**:',
+      '- **major**:',
+      '- **minor**:',
+    ])
+    expect(severity[2]).toBe(
+      '- **minor**: anything else worth a note. Minors are not fixed in this PR; they become follow-up tickets the main agent creates.',
+    )
+  })
+
+  it('@TAN-101 Follow-up tickets says a process item joins an open process ticket of its area', () => {
+    const followUp = section(skill(), 'Follow-up tickets')
+    for (const text of [
+      'before creating a process ticket for a review minor or out-of-scope item, look for an open process ticket of its area',
+      'in any status before In Progress (never In Progress, QA or Done)',
+      'whose Scope already touches the same files or workflow',
+      'Priority does not matter',
+      'the source ticket and finding ids in its Why, a Scope bullet and a Gherkin criterion',
+      'If several qualify, it joins the highest-ranked one',
+      'Create a new ticket only when there is none',
+      'A Definition of Done exception always gets its own ticket',
+      'Other follow-ups get a new ticket per area',
+    ]) {
+      expect(followUp).toContain(text)
+    }
+  })
+
+  it('@TAN-101 the Stop rule sends process minors to an open ticket and names the key either way', () => {
+    const stop = section(skill(), 'Stop rule')
+    expect(stop).toContain(
+      'a process minor joins an open process ticket of its area when there is one',
+    )
+    expect(stop).toContain(
+      'Put the keys in the review line, whether the ticket is new or an open one the minor joined',
+    )
+    expect(stop).toContain('(a minor joined to an open ticket is filed too)')
+    expect(stop).not.toContain('Put the keys in the review line; write')
+  })
+
+  it('@TAN-101 How to work step 4 lets process work join an open process ticket', () => {
+    expect(section(claude(), 'How to work')).toContain(
+      'becomes a Jira ticket that Claude creates in the same session, or, for process work, joins an open process ticket of its area',
+    )
+  })
+
+  it('@TAN-101 a Process row records the open-ticket rule and the TAN-55 row points to it', () => {
+    const log = lines(read('docs/decisions.md'))
+    const row = log.find((line) => line.startsWith('| 2026-11-26 |') && line.includes('(TAN-101)'))
+    expect(row).toBeDefined()
+    expect(row).toContain('joins an open process ticket of its area')
+    expect(row).toContain('priority does not matter')
+    expect(row).toContain('if several qualify, it joins the highest-ranked one')
+    expect(row).toContain('A Definition of Done exception keeps its own ticket')
+    const tan55 = log.find(
+      (line) =>
+        line.startsWith('| 2026-11-09 |') &&
+        line.includes('Claude files every follow-up as a Jira ticket'),
+    )
+    expect(tan55).toContain('Superseded in part by the TAN-107 row below')
+    expect(tan55).toContain('and by the TAN-101 row below')
+  })
+})
