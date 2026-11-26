@@ -436,6 +436,17 @@ describe('hard rules, citations and open tickets', () => {
     expect(section(agent('code-rules-reviewer'), 'What to check')).toContain('WCAG AA contrast')
   })
 
+  // The TAN-101 decoy rerun: a record with no UUID in a function nothing called yet was rated
+  // major, "a blocker as soon as anything calls it". Reachability never lowers a hard rule.
+  it('@TAN-101 code-rules-reviewer keeps a hard-rule blocker in code nothing calls yet', () => {
+    const blocker = lines(section(agent('code-rules-reviewer'), 'Severity')).find((line) =>
+      line.startsWith('- **blocker**:'),
+    )
+    expect(blocker).toContain(
+      'It stays a blocker in code the diff adds even when nothing calls that code yet.',
+    )
+  })
+
   it.each(codeReviewers)('@TAN-101 %s pins every clause of the citation rule', (name) => {
     const howTo = section(agent(name), 'How to work')
     expect(howTo).toContain(
