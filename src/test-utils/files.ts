@@ -10,3 +10,6 @@ export const fromRoot = (relative: string) =>
 
 // A repo file as UTF-8 text.
 export const read = (relative: string) => readFileSync(fromRoot(relative), 'utf8')
+
+// A repo file as bytes, for binary files such as PNGs [TAN-113].
+export const readBytes = (relative: string) => readFileSync(fromRoot(relative))

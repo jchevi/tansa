@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { fromRoot, read } from './test-utils/files'
 import { frontmatterField, lines, section } from './test-utils/markdown'
@@ -28,6 +28,11 @@ describe('workflow docs', () => {
   const startOfChat = () => read('.claude/skills/start-of-chat/SKILL.md')
   // The one place the start-of-chat Steps section is read [TAN-111].
   const stepLines = () => lines(section(startOfChat(), 'Steps'))
+  // The Process row of one ticket on one date, so a same-date row above it is never
+  // picked instead [TAN-113].
+  const processRows = () => lines(section(decisions, 'Process'))
+  const processRow = (key: string, date: string, rows: string[] = processRows()) =>
+    rows.find((l) => l.startsWith(`| ${date} |`) && l.includes(key))
   const step = (n: number) => {
     const line = stepLines().find((l) => l.startsWith(`${String(n)}. `))
     expect(line, `step ${String(n)}`).toBeDefined()
@@ -774,6 +779,109 @@ describe('workflow docs', () => {
       expect(row).toContain('docs/decisions.md')
       const why = row?.split(' | ').at(-1) ?? ''
       expect(why).toContain('line budget')
+    })
+  })
+
+  // TAN-113 closes out the open process work: TAN-103's doc-move hardening and TAN-112's
+  // no-sprint wording, with the review findings fixed in the same PR [TAN-113].
+  describe('process close-out', () => {
+    it('@TAN-113 CLAUDE.md keeps no moved command or bootstrap text', () => {
+      expect(claude).not.toContain('npm run')
+      expect(claude).not.toContain('From TAN-12 on')
+    })
+
+    it('@TAN-113 a same-date row above does not hide the TAN-90 and TAN-91 rows', () => {
+      const decoy =
+        '| 2026-11-25 | mentions `docs/mockups/` and Start of chat (TAN-900) (TAN-910) | x |'
+      const rows = [decoy, ...processRows()]
+      for (const [key, decoyKey] of [
+        ['TAN-90', 'TAN-900'],
+        ['TAN-91', 'TAN-910'],
+      ] as const) {
+        const row = processRow(key, '2026-11-25', rows)
+        expect(row, key).toContain(`(${key})`)
+        expect(row, key).not.toContain(decoyKey)
+      }
+      expect(processRow('TAN-90', '2026-11-26')).toBeUndefined()
+    })
+
+    it('@TAN-113 every .claude link in Working with Claude Code points at a real path', () => {
+      const links = [
+        ...section(read('README.md'), 'Working with Claude Code').matchAll(
+          /\[`([^`]+)`\]\(([^)]+)\)/g,
+        ),
+      ]
+        .map(([, text = '', target = '']) => ({ text, target }))
+        .filter(({ text, target }) => text.startsWith('.claude') || target.startsWith('.claude'))
+      expect(links.length).toBeGreaterThanOrEqual(4)
+      for (const { text, target } of links) {
+        expect(target, text).toBe(text)
+        expect(existsSync(fromRoot(target)), target).toBe(true)
+      }
+    })
+
+    it('@TAN-113 the TAN-100 Process row names every move and states no new rule', () => {
+      const row = processRow('TAN-100', '2026-11-25') ?? ''
+      for (const text of [
+        'Commands',
+        'IndexedDB',
+        'Working with Claude Code',
+        'Definition of Done',
+      ]) {
+        expect(row, text).toContain(text)
+      }
+      const why = row.slice(1, -1).split(' | ').at(-1)?.trim() ?? ''
+      expect(why.endsWith('the 9 free lines are there to be used'), why).toBe(true)
+    })
+
+    it('@TAN-113 the README Commands and Folder structure tables line up', () => {
+      for (const heading of ['Commands', 'Folder structure']) {
+        const table = lines(section(read('README.md'), heading)).filter((l) => l.startsWith('|'))
+        const separator = table[1] ?? ''
+        expect(separator, heading).toMatch(/^\| -+ \|/)
+        for (const row of table) expect(row.length, row).toBe(separator.length)
+      }
+    })
+
+    // Each case is checked inside its own clause, so a phrase in the wrong one fails.
+    it('@TAN-113 step 1 and CLAUDE.md open a sprint when none is active', () => {
+      const clause = (text: string, from: string, to?: string) => {
+        const start = text.indexOf(from)
+        expect(start, from).toBeGreaterThan(-1)
+        if (to === undefined) return text.slice(start)
+        const end = text.indexOf(to, start)
+        expect(end, to).toBeGreaterThan(start)
+        return text.slice(start, end)
+      }
+      const one = step(1)
+      const ended = clause(one, 'If today is past its end date', 'If no sprint is active')
+      expect(ended).toContain('propose closing it and opening the next one')
+      expect(ended).toContain('with the unfinished tickets that move into it')
+      const none = clause(one, 'If no sprint is active')
+      for (const text of [
+        'propose opening one',
+        'starting today',
+        'with the tickets the owner approves for it',
+      ]) {
+        expect(none).toContain(text)
+      }
+      expect(none).not.toContain('clos')
+      expect(none).not.toContain('unfinished')
+      const startLine = bullet('- **Start of chat:**') ?? ''
+      expect(clause(startLine, 'if it has ended', 'if none is active')).toContain(
+        'propose closing it and opening the next with its unfinished tickets',
+      )
+      const noneActive = clause(startLine, 'if none is active', ')')
+      expect(noneActive).toContain('propose opening one')
+      expect(noneActive).not.toContain('clos')
+      expect(noneActive).not.toContain('unfinished')
+    })
+
+    it('@TAN-113 a Process row records the fold and the fixed findings', () => {
+      const row = processRow('TAN-113', '2026-11-27') ?? ''
+      for (const text of ['TAN-103', 'TAN-112', 'fixed in its PR', 'by owner decision']) {
+        expect(row, text).toContain(text)
+      }
     })
   })
 })
