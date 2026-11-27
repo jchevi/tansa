@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { frontmatter } from './test-utils/markdown'
 
 const fromRoot = (relative: string) => fileURLToPath(new URL(`../${relative}`, import.meta.url))
 const read = (relative: string) => readFileSync(fromRoot(relative), 'utf8')
@@ -32,21 +33,12 @@ type Reviewer = keyof typeof reviewers
 // a deliberate decision, not a side effect of another change [TAN-33].
 const claudeMdLineBudget = 68 + 6
 
-function frontmatter(markdown: string): Record<string, string> {
-  const [first, ...rest] = lines(markdown)
-  if (first !== '---') throw new Error('Missing frontmatter')
-  const end = rest.indexOf('---')
-  if (end === -1) throw new Error('Unclosed frontmatter')
-  const fields: Record<string, string> = {}
-  for (const line of rest.slice(0, end)) {
-    const match = /^([a-zA-Z-]+):\s*(.*)$/.exec(line)
-    if (match?.[1] !== undefined && match[2] !== undefined) fields[match[1]] = match[2].trim()
-  }
-  return fields
-}
-
 const agent = (name: Reviewer) => read(`.claude/agents/${name}.md`)
 const names = Object.keys(reviewers) as Reviewer[]
+const codeReviewers = names.filter((name) => reviewers[name] === 'code')
+const planReviewers = names.filter((name) => reviewers[name] === 'plan')
+// Read inside each test, so a missing file fails the tests instead of the whole file.
+const skill = () => read('.claude/skills/review-loop/SKILL.md')
 
 describe('review loop agents', () => {
   it('@TAN-33 the agents folder holds exactly the four reviewers', () => {
@@ -86,9 +78,6 @@ describe('review loop agents', () => {
 })
 
 describe('review-loop skill', () => {
-  // Read inside each test, so a missing file fails the tests instead of the whole file.
-  const skill = () => read('.claude/skills/review-loop/SKILL.md')
-
   it('@TAN-33 the skill is named review-loop and takes plan or code', () => {
     const fields = frontmatter(skill())
     expect(fields.name).toBe('review-loop')
@@ -172,7 +161,6 @@ describe('workflow docs for the review loop', () => {
 // itself. The negative checks matter: adding the new sentence next to the old one must
 // fail [TAN-55].
 describe('follow-up tickets', () => {
-  const skill = () => read('.claude/skills/review-loop/SKILL.md')
   const claude = () => read('CLAUDE.md')
   const oldWording = [
     'once the owner creates the tickets',
@@ -262,9 +250,6 @@ describe('follow-up tickets', () => {
 // rating the same hard-coded color differently. CC-5 (PR #11) found that a stale local
 // main adds already-merged commits to the review diff [TAN-56].
 describe('reviewer citations, severities and diff base', () => {
-  const codeReviewers = names.filter((name) => reviewers[name] === 'code')
-  const skill = () => read('.claude/skills/review-loop/SKILL.md')
-
   it.each(codeReviewers)('@TAN-56 %s checks every cited line number against the file', (name) => {
     const howTo = section(agent(name), 'How to work')
     expect(howTo).toContain(
@@ -307,9 +292,6 @@ describe('reviewer citations, severities and diff base', () => {
 // reviewers read it differently. Plan-phase minors on text the plan already writes may now be
 // fixed in place; code-phase minors are still filed [TAN-107].
 describe('minors fixed in the plan', () => {
-  const skill = () => read('.claude/skills/review-loop/SKILL.md')
-  const planReviewers = names.filter((name) => reviewers[name] === 'plan')
-  const codeReviewers = names.filter((name) => reviewers[name] === 'code')
   const minorLine = (name: Reviewer) =>
     lines(section(agent(name), 'Severity')).find((line) => line.startsWith('- **minor**:'))
 
@@ -355,13 +337,6 @@ describe('minors fixed in the plan', () => {
     expect(minor).toContain('mark it `resolved` if the fix holds')
   })
 
-  it.each(codeReviewers)('@TAN-107 %s keeps every minor as a ticket', (name) => {
-    const minor = minorLine(name)
-    expect(minor).toBeDefined()
-    expect(minor).toContain('they become follow-up tickets the main agent creates')
-    expect(minor).not.toContain('fixed in the plan')
-  })
-
   it('@TAN-107 a Process row records the rule and the TAN-55 row points to it', () => {
     const log = lines(read('docs/decisions.md'))
     const row = log.find((line) => line.startsWith('| 2026-11-26 |') && line.includes('(TAN-107)'))
@@ -381,9 +356,7 @@ describe('minors fixed in the plan', () => {
 // pinned only the start of each sentence. TAN-107 CC-1: the fix-in-place guard blocked one
 // phrase only. The owner's open-ticket rule keeps process follow-ups from piling up [TAN-101].
 describe('hard rules, citations and open tickets', () => {
-  const skill = () => read('.claude/skills/review-loop/SKILL.md')
   const claude = () => read('CLAUDE.md')
-  const codeReviewers = names.filter((name) => reviewers[name] === 'code')
   const severityLines = (name: Reviewer) =>
     lines(section(agent(name), 'Severity'))
       .slice(2)
@@ -457,6 +430,9 @@ describe('hard rules, citations and open tickets', () => {
     )
   })
 
+  // The exact match also replaced the TAN-107 test "keeps every minor as a ticket": a line
+  // that is exactly this sentence keeps minors as tickets and holds no fix-in-place
+  // clause, so a second test would guard the same rule [TAN-110].
   it.each(codeReviewers)('@TAN-101 %s minor line is exactly the TAN-55 sentence', (name) => {
     const severity = severityLines(name)
     expect(severity.map((line) => line.slice(0, line.indexOf(':') + 1))).toEqual([

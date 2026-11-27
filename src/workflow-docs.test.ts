@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { frontmatterField } from './test-utils/markdown'
 
 const read = (relative: string) =>
   readFileSync(fileURLToPath(new URL(relative, import.meta.url)), 'utf8')
@@ -13,21 +14,24 @@ function section(markdown: string, heading: string): string {
   return markdown.slice(start, end === -1 ? undefined : end)
 }
 
-// One `key: value` field of the frontmatter block between the first two `---` lines
-// [TAN-105].
-function frontmatterField(markdown: string, key: string): string {
-  const lines = markdown.split(/\r?\n/)
-  const end = lines.indexOf('---', 1)
-  if (lines[0] !== '---' || end === -1) throw new Error('Frontmatter not found')
-  const line = lines.slice(1, end).find((l) => l.startsWith(`${key}: `))
-  if (line === undefined) throw new Error(`Frontmatter field "${key}" not found`)
-  return line.slice(key.length + 2)
-}
-
 describe('workflow docs', () => {
   const claude = read('../CLAUDE.md')
   const decisions = read('../docs/decisions.md')
   const lifecycle = section(claude, 'Ticket lifecycle')
+  // Shared by every start-of-chat block, so each line is found one way [TAN-110].
+  const orderLine = () =>
+    section(claude, 'How to work')
+      .split(/\r?\n/)
+      .find((l) => l.startsWith('- **Order:**'))
+  // Read inside each test, so a missing file fails those tests, not the file [TAN-105].
+  const startOfChat = () => read('../.claude/skills/start-of-chat/SKILL.md')
+  const step = (n: number) => {
+    const line = section(startOfChat(), 'Steps')
+      .split(/\r?\n/)
+      .find((l) => l.startsWith(`${String(n)}. `))
+    expect(line, `step ${String(n)}`).toBeDefined()
+    return line ?? ''
+  }
 
   // One numbered step per stage, in order [TAN-31].
   it.each([
@@ -71,8 +75,7 @@ describe('workflow docs', () => {
     ]) {
       expect(line).toContain(text)
     }
-    const howToWork = section(claude, 'How to work').split(/\r?\n/)
-    expect(howToWork.some((l) => l.startsWith('- **Order:**'))).toBe(true)
+    expect(orderLine()).toBeDefined()
   })
 
   // Step 8 is the last thing done for a ticket, after the sync [TAN-68].
@@ -90,7 +93,8 @@ describe('workflow docs', () => {
     const lines = text.split(/\r?\n/)
     const start = lines.findIndex((l) => l.startsWith(`${String(step)}. `))
     const end = lines.findIndex((l) => l.startsWith(`${String(step + 1)}. `))
-    expect(start).toBeGreaterThan(-1)
+    expect(start, `step ${String(step)}`).toBeGreaterThan(-1)
+    expect(end, `step ${String(step + 1)}`).toBeGreaterThan(-1)
     expect(end).toBeGreaterThan(start)
     return lines.slice(start, end)
   }
@@ -107,7 +111,8 @@ describe('workflow docs', () => {
   const packBeforeReview = (stepLine: string) => {
     const pack = stepLine.indexOf('stories also commit their QA pack')
     const review = stepLine.indexOf('/review-loop code')
-    expect(pack).toBeGreaterThan(-1)
+    expect(pack, 'stories also commit their QA pack').toBeGreaterThan(-1)
+    expect(review, '/review-loop code').toBeGreaterThan(-1)
     expect(review).toBeGreaterThan(pack)
   }
 
@@ -211,7 +216,7 @@ describe('workflow docs', () => {
         .map((cell) => cell.trim())
 
     it('@TAN-88 How to work step 2 makes the mockup the reference and requires a Mockup check', () => {
-      const step = stepBlock(2, howToWork).join('\n')
+      const block = stepBlock(2, howToWork).join('\n')
       for (const text of [
         '**Mockup check:**',
         'the mockup named in the ticket is the reference',
@@ -219,7 +224,7 @@ describe('workflow docs', () => {
         'Mockup departures',
         "fills in that row's Corrected in",
       ]) {
-        expect(step).toContain(text)
+        expect(block).toContain(text)
       }
     })
 
@@ -438,7 +443,7 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-91 the start-of-chat skill covers the five parts', () => {
-      const skill = read('../.claude/skills/start-of-chat/SKILL.md')
+      const skill = startOfChat()
       expect(frontmatterField(skill, 'name')).toBe('start-of-chat')
       const steps = section(skill, 'Steps')
         .split(/\r?\n/)
@@ -474,16 +479,6 @@ describe('workflow docs', () => {
   // Within each group of the order, the next ticket comes from a review with reasons that
   // the owner approves, not from creation order, and the Jira rank follows it [TAN-102].
   describe('order within a group', () => {
-    const order = () =>
-      section(claude, 'How to work')
-        .split(/\r?\n/)
-        .find((l) => l.startsWith('- **Order:**'))
-    // Read inside each test, so a missing file fails those tests, not the file [TAN-105].
-    const startOfChat = () => read('../.claude/skills/start-of-chat/SKILL.md')
-    const step5 = () =>
-      section(startOfChat(), 'Steps')
-        .split(/\r?\n/)
-        .find((l) => l.startsWith('5. '))
     const criteria = 'dependencies, what unblocks or saves the most time on later work, risk, size'
 
     it('@TAN-102 the Order rule chooses the next ticket in a group by a review the owner approves', () => {
@@ -494,13 +489,13 @@ describe('workflow docs', () => {
         'once the owner approves it',
         'updates the Jira rank to match',
       ]) {
-        expect(order()).toContain(text)
+        expect(orderLine()).toContain(text)
       }
     })
 
     it('@TAN-102 the Order rule says when the review runs', () => {
-      expect(order()).toContain('The review runs at each hand-off (lifecycle step 8)')
-      expect(order()).toContain('the group has an open ticket that order does not list')
+      expect(orderLine()).toContain('The review runs at each hand-off (lifecycle step 8)')
+      expect(orderLine()).toContain('the group has an open ticket that order does not list')
     })
 
     it('@TAN-102 the hand-off reviews the next group and updates the rank', () => {
@@ -519,9 +514,9 @@ describe('workflow docs', () => {
         'Once the owner approves the order',
         'the rank is updated to match',
       ]) {
-        expect(step5()).toContain(text)
+        expect(step(5)).toContain(text)
       }
-      expect(step5()).not.toContain('by board rank (top to bottom) within each group')
+      expect(step(5)).not.toContain('by board rank (top to bottom) within each group')
     })
 
     it('@TAN-102 start-of-chat has a Changes bullet for the rank', () => {
@@ -547,16 +542,8 @@ describe('workflow docs', () => {
   // Sprints go through the connector, the order clauses are pinned, the owner's "it stays"
   // answer is remembered, and the helpers fail on their own assertion [TAN-105].
   describe('start-of-chat refinements', () => {
-    const skill = () => read('../.claude/skills/start-of-chat/SKILL.md')
-    const step = (n: number) => {
-      const line = section(skill(), 'Steps')
-        .split(/\r?\n/)
-        .find((l) => l.startsWith(`${String(n)}. `))
-      expect(line, `step ${String(n)}`).toBeDefined()
-      return line ?? ''
-    }
     const changesBullet = (prefix: string) => {
-      const line = section(skill(), 'Changes')
+      const line = section(startOfChat(), 'Changes')
         .split(/\r?\n/)
         .find((l) => l.startsWith(prefix))
       expect(line, prefix).toBeDefined()
@@ -585,7 +572,7 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-105 the skill no longer says there is no connector call for sprints', () => {
-      expect(skill()).not.toContain('no connector call')
+      expect(startOfChat()).not.toContain('no connector call')
     })
 
     it('@TAN-105 start-of-chat step 5 keeps the story-order clause', () => {
@@ -600,10 +587,7 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-105 both review triggers and the rank clause are pinned', () => {
-      const order = section(claude, 'How to work')
-        .split(/\r?\n/)
-        .find((l) => l.startsWith('- **Order:**'))
-      expect(order).toContain(
+      expect(orderLine()).toContain(
         'when the chat did not start from a hand-off prompt with an approved order',
       )
       expect(step(5)).toContain('If there is no such prompt')
