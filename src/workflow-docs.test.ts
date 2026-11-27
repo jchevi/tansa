@@ -794,6 +794,8 @@ describe('workflow docs', () => {
       expect(selfCount(processSection), processSection).toBe(1)
       const dateLookup = ["startsWith('| ", '20'].join('')
       expect(selfCount(dateLookup), dateLookup).toBe(0)
+      const rowsSearch = ['processRows', '().'].join('')
+      expect(selfCount(rowsSearch), rowsSearch).toBe(0)
     })
 
     it('@TAN-113 every .claude link in Working with Claude Code points at a real path', () => {
