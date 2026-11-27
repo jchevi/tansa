@@ -1,29 +1,26 @@
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-
-const read = (relative: string) =>
-  readFileSync(fileURLToPath(new URL(relative, import.meta.url)), 'utf8')
+import { read } from './test-utils/files'
+import { lines } from './test-utils/markdown'
 
 // The lines of one job: from "  <name>:" up to the next job or the end of the file.
 // Whole lines, so "npm run test" can't be satisfied by "npm run test:e2e".
 function jobLines(workflow: string, job: string): string[] {
-  const lines = workflow.split(/\r?\n/)
-  const start = lines.indexOf(`  ${job}:`)
+  const all = lines(workflow)
+  const start = all.indexOf(`  ${job}:`)
   if (start === -1) throw new Error(`Job "${job}" not found in ci.yml`)
-  const end = lines.findIndex((line, index) => index > start && /^ {2}[\w-]+:$/.test(line))
-  return lines
+  const end = all.findIndex((line, index) => index > start && /^ {2}[\w-]+:$/.test(line))
+  return all
     .slice(start + 1, end === -1 ? undefined : end)
     .map((line) => line.trim())
     .filter((line) => line !== '' && !line.startsWith('#'))
 }
 
 describe('CI and preview config', () => {
-  const ci = read('../.github/workflows/ci.yml')
-  const wrangler = read('../wrangler.jsonc')
+  const ci = read('.github/workflows/ci.yml')
+  const wrangler = read('wrangler.jsonc')
 
   it('@TAN-11 CI runs on pull requests', () => {
-    expect(ci.split(/\r?\n/)).toContain('  pull_request:')
+    expect(lines(ci)).toContain('  pull_request:')
   })
 
   it.each([
@@ -49,7 +46,7 @@ describe('CI and preview config', () => {
   })
 
   it('@TAN-11 previews serve the build output as a single-page app', () => {
-    const settings = wrangler.split(/\r?\n/).map((line) => line.trim())
+    const settings = lines(wrangler).map((line) => line.trim())
     expect(settings).toContain('"directory": "./dist",')
     expect(settings).toContain('"not_found_handling": "single-page-application",')
     expect(settings).toContain('"preview_urls": true,')
@@ -58,8 +55,7 @@ describe('CI and preview config', () => {
 
   // A tag like @v7 can be moved to other code; a commit SHA can't [TAN-31].
   it('@TAN-31 every action is pinned to a commit SHA', () => {
-    const uses = ci
-      .split(/\r?\n/)
+    const uses = lines(ci)
       .map((line) => line.trim())
       .filter((line) => line.startsWith('- uses:'))
     expect(uses.length).toBeGreaterThan(0)
@@ -71,15 +67,15 @@ describe('CI and preview config', () => {
   // A shared group on main would still cancel a pending run when a third one queues, so
   // each push to main gets a group of its own commit [TAN-31].
   it('@TAN-31 only pull request runs are cancelled by a newer push', () => {
-    const lines = ci.split(/\r?\n/)
-    expect(lines).toContain(
+    const all = lines(ci)
+    expect(all).toContain(
       "  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}",
     )
-    expect(lines).toContain("  cancel-in-progress: ${{ github.event_name == 'pull_request' }}")
+    expect(all).toContain("  cancel-in-progress: ${{ github.event_name == 'pull_request' }}")
   })
 
   it('@TAN-31 Dependabot keeps the pinned actions up to date', () => {
-    const dependabot = read('../.github/dependabot.yml')
+    const dependabot = read('.github/dependabot.yml')
     expect(dependabot).toContain('package-ecosystem: github-actions')
   })
 })

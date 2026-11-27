@@ -1,8 +1,11 @@
+import { readdirSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { read } from './files'
+import { fromRoot, read } from './files'
 import { frontmatter, lines, section } from './markdown'
 
 const workflowTests = ['review-loop.test.ts', 'workflow-docs.test.ts']
+// The repo-level tests: every test file directly in src/ [TAN-113].
+const topTests = readdirSync(fromRoot('src')).filter((file) => file.endsWith('.test.ts'))
 
 // Two frontmatter parsers could drift apart, so both workflow test files read it through
 // this module [TAN-110].
@@ -61,11 +64,54 @@ describe('shared markdown helpers', () => {
   })
 
   // A copy under another name still splits on the frontmatter fence, so the fence itself
-  // is the marker. Built from parts so this file never matches itself [TAN-111].
+  // is the marker. This file is not scanned, so the literal can be written plainly
+  // [TAN-111, TAN-113].
   it('@TAN-111 neither workflow test file parses frontmatter by hand', () => {
-    const fence = ["'", '---', "'"].join('')
+    const fence = "'---'"
     for (const file of workflowTests) {
       expect(read(`src/${file}`), `${file} ${fence}`).not.toContain(fence)
+    }
+  })
+
+  // The repo-level tests read every file the same way, from the repo root [TAN-113].
+  it('@TAN-113 the top-level test files read files only through test-utils', () => {
+    expect(topTests).toHaveLength(5)
+    for (const file of topTests) {
+      const source = read(`src/${file}`)
+      expect(source, `${file} import.meta.url`).not.toContain('import.meta.url')
+      expect(source, `${file} readFileSync`).not.toContain('readFileSync')
+      expect(source, `${file} readFile`).not.toMatch(/\breadFile\b|node:fs\/promises/)
+      expect(source, `${file} own helper`).not.toMatch(
+        /(function|const)\s+(section|read|readBytes|lines|fromRoot|fromSrc)\b/,
+      )
+    }
+  })
+
+  // Only the fixture strings of the frontmatterField test may hold a fence, so a parser
+  // splitting on '---', `---` or /^---$/ fails [TAN-113].
+  it('@TAN-113 no workflow test file has a frontmatter fence outside the fixture', () => {
+    const fixture = "'---\\nname: x\\n---\\n'"
+    for (const file of workflowTests) {
+      expect(read(`src/${file}`).replaceAll(fixture, ''), file).not.toContain('---')
+    }
+  })
+
+  it('@TAN-113 the start-of-chat skill, its Steps and the Order line are read in one place', () => {
+    const sources = workflowTests.map((file) => read(`src/${file}`)).join('\n')
+    const count = (pattern: RegExp) => sources.match(pattern)?.length ?? 0
+    expect(count(/start-of-chat\/SKILL\.md/g), 'skill path').toBe(1)
+    expect(count(/['"`](## )?Steps['"`]/g), 'Steps').toBe(1)
+    for (const text of ['startOfChat().', 'lines(startOfChat())', '= startOfChat()']) {
+      expect(sources, text).not.toContain(text)
+    }
+    expect(count(/(?<!!\w+\.)startsWith\(orderPrefix\)/g), 'startsWith(orderPrefix)').toBe(0)
+  })
+
+  // lines() splits on LF and CRLF; a hand split on '\n' leaves a '\r' on every line on
+  // Windows [TAN-113].
+  it('@TAN-113 no top-level test file splits lines by hand', () => {
+    for (const file of topTests) {
+      expect(read(`src/${file}`), file).not.toMatch(/\.split\(\s*(['"`][^'"`]*\\n|\/[^/]*\\n)/)
     }
   })
 })

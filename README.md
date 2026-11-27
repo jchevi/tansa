@@ -13,35 +13,35 @@ All data stays in your browser (IndexedDB). There is no backend.
 
 ## Commands
 
-| Command                | What it does                                  |
-| ---------------------- | --------------------------------------------- |
-| `npm install`          | Install dependencies                          |
-| `npm run dev`          | Start the dev server at http://localhost:5173 |
-| `npm run build`        | Typecheck and build for production to `dist/` |
-| `npm run preview`      | Serve the production build locally            |
-| `npm run lint`         | Run ESLint and Stylelint                      |
-| `npm run format`       | Format code with Prettier                     |
-| `npm run format:check` | Check formatting without changing files       |
-| `npm run typecheck`    | Run the TypeScript compiler without emitting  |
-| `npm run test`         | Run unit tests with Vitest                    |
+| Command                | What it does                                          |
+| ---------------------- | ----------------------------------------------------- |
+| `npm install`          | Install dependencies                                  |
+| `npm run dev`          | Start the dev server at http://localhost:5173         |
+| `npm run build`        | Typecheck and build for production to `dist/`         |
+| `npm run preview`      | Serve the production build locally                    |
+| `npm run lint`         | Run ESLint and Stylelint                              |
+| `npm run format`       | Format code with Prettier                             |
+| `npm run format:check` | Check formatting without changing files               |
+| `npm run typecheck`    | Run the TypeScript compiler without emitting          |
+| `npm run test`         | Run unit tests with Vitest                            |
 | `npm run test:e2e`     | Build, serve and run end-to-end tests with Playwright |
 
 ## Folder structure
 
-| Path            | What lives there                                        |
-| --------------- | ------------------------------------------------------- |
-| `docs/`         | Product spec, decision log, mockups and QA packs        |
-| `docs/mockups/` | Mockup images per screen state; their sources in `source/` |
-| `docs/qa/`      | QA pack per story: prep for its exploratory session     |
-| `.claude/`      | Claude Code workflow: skills, reviewers and hooks       |
-| `e2e/`          | End-to-end tests (Playwright)                           |
-| `src/features/` | UI grouped by feature (charter, session, debrief, ...)  |
-| `src/data/`     | IndexedDB access; the only place that touches storage   |
-| `src/i18n/`     | Language files; no UI text lives in components          |
-| `src/theme/`    | Color tokens, fonts, base styles and contrast checks    |
-| `src/test-utils/` | Helpers shared by unit tests (test code, not app code) |
-| `src/main.tsx`  | App entry point                                         |
-| `src/App.tsx`   | Root component                                          |
+| Path              | What lives there                                           |
+| ----------------- | ---------------------------------------------------------- |
+| `docs/`           | Product spec, decision log, mockups and QA packs           |
+| `docs/mockups/`   | Mockup images per screen state; their sources in `source/` |
+| `docs/qa/`        | QA pack per story: prep for its exploratory session        |
+| `.claude/`        | Claude Code workflow: skills, reviewers and hooks          |
+| `e2e/`            | End-to-end tests (Playwright)                              |
+| `src/features/`   | UI grouped by feature (charter, session, debrief, ...)     |
+| `src/data/`       | IndexedDB access; the only place that touches storage      |
+| `src/i18n/`       | Language files; no UI text lives in components             |
+| `src/theme/`      | Color tokens, fonts, base styles and contrast checks       |
+| `src/test-utils/` | Helpers shared by unit tests (test code, not app code)     |
+| `src/main.tsx`    | App entry point                                            |
+| `src/App.tsx`     | Root component                                             |
 
 Components never call IndexedDB directly: they go through `src/data`. This keeps storage swappable and testable.
 
