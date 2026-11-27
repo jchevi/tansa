@@ -1,20 +1,7 @@
-import { readdirSync, readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { readdirSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { frontmatter } from './test-utils/markdown'
-
-const fromRoot = (relative: string) => fileURLToPath(new URL(`../${relative}`, import.meta.url))
-const read = (relative: string) => readFileSync(fromRoot(relative), 'utf8')
-const lines = (text: string) => text.split(/\r?\n/)
-
-// The text of one "## " section, so a phrase found elsewhere in the file doesn't count.
-// Same helper as in workflow-docs.test.ts [TAN-55].
-function section(markdown: string, heading: string): string {
-  const start = markdown.indexOf(`\n## ${heading}\n`)
-  if (start === -1) throw new Error(`Section "## ${heading}" not found`)
-  const end = markdown.indexOf('\n## ', start + 1)
-  return markdown.slice(start, end === -1 ? undefined : end)
-}
+import { fromRoot, read } from './test-utils/files'
+import { frontmatter, lines, section } from './test-utils/markdown'
 
 // The verdict line every reviewer ends with. TAN-34's SubagentStop hook parses this exact
 // shape, so changing it here means changing the hook too [TAN-33].
@@ -39,6 +26,7 @@ const codeReviewers = names.filter((name) => reviewers[name] === 'code')
 const planReviewers = names.filter((name) => reviewers[name] === 'plan')
 // Read inside each test, so a missing file fails the tests instead of the whole file.
 const skill = () => read('.claude/skills/review-loop/SKILL.md')
+const claude = () => read('CLAUDE.md')
 
 describe('review loop agents', () => {
   it('@TAN-33 the agents folder holds exactly the four reviewers', () => {
@@ -138,15 +126,13 @@ describe('review-loop skill', () => {
 })
 
 describe('workflow docs for the review loop', () => {
-  const claude = read('CLAUDE.md')
-
   it('@TAN-33 CLAUDE.md names both review phases', () => {
-    expect(claude).toContain('/review-loop plan')
-    expect(claude).toContain('/review-loop code')
+    expect(claude()).toContain('/review-loop plan')
+    expect(claude()).toContain('/review-loop code')
   })
 
   it('@TAN-33 CLAUDE.md stays within its line budget', () => {
-    expect(lines(claude.trimEnd()).length).toBeLessThanOrEqual(claudeMdLineBudget)
+    expect(lines(claude().trimEnd()).length).toBeLessThanOrEqual(claudeMdLineBudget)
   })
 
   it('@TAN-33 the decision log records no AI attribution', () => {
@@ -161,7 +147,6 @@ describe('workflow docs for the review loop', () => {
 // itself. The negative checks matter: adding the new sentence next to the old one must
 // fail [TAN-55].
 describe('follow-up tickets', () => {
-  const claude = () => read('CLAUDE.md')
   const oldWording = [
     'once the owner creates the tickets',
     'notes for new tickets',
@@ -356,7 +341,6 @@ describe('minors fixed in the plan', () => {
 // pinned only the start of each sentence. TAN-107 CC-1: the fix-in-place guard blocked one
 // phrase only. The owner's open-ticket rule keeps process follow-ups from piling up [TAN-101].
 describe('hard rules, citations and open tickets', () => {
-  const claude = () => read('CLAUDE.md')
   const severityLines = (name: Reviewer) =>
     lines(section(agent(name), 'Severity'))
       .slice(2)

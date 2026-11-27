@@ -1,39 +1,35 @@
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { frontmatterField } from './test-utils/markdown'
-
-const read = (relative: string) =>
-  readFileSync(fileURLToPath(new URL(relative, import.meta.url)), 'utf8')
-
-// The text of one "## " section, so a word found elsewhere in the file doesn't count.
-function section(markdown: string, heading: string): string {
-  const start = markdown.indexOf(`\n## ${heading}\n`)
-  if (start === -1) throw new Error(`Section "## ${heading}" not found`)
-  const end = markdown.indexOf('\n## ', start + 1)
-  return markdown.slice(start, end === -1 ? undefined : end)
-}
+import { fromRoot, read } from './test-utils/files'
+import { frontmatterField, lines, section } from './test-utils/markdown'
 
 describe('workflow docs', () => {
-  const claude = read('../CLAUDE.md')
-  const decisions = read('../docs/decisions.md')
+  const claude = read('CLAUDE.md')
+  const decisions = read('docs/decisions.md')
   const lifecycle = section(claude, 'Ticket lifecycle')
-  // Shared by every start-of-chat block, so each line is found one way [TAN-110].
-  const orderLine = (_text?: string[]) =>
-    section(claude, 'How to work')
-      .split(/\r?\n/)
-      .find((l) => l.startsWith('- **Order:**'))
-  // Read inside each test, so a missing file fails those tests, not the file [TAN-105].
-  const startOfChat = () => read('../.claude/skills/start-of-chat/SKILL.md')
   // How many times a text appears in this file, for the "found one way" checks [TAN-111].
-  const selfCount = (text: string) => read('./workflow-docs.test.ts').split(text).length - 1
-  const howToWorkLines = () => section(claude, 'How to work').split(/\r?\n/)
+  const selfCount = (text: string) => read('src/workflow-docs.test.ts').split(text).length - 1
+  const howToWorkLines = () => lines(section(claude, 'How to work'))
+  // The bullet starting with the prefix, found before step 1. Both indexes are checked
+  // on their own, so a missing line fails with its name, not as a wrong order [TAN-105].
+  const bullet = (prefix: string, text: string[] = howToWorkLines()) => {
+    const at = text.findIndex((l) => l.startsWith(prefix))
+    const first = text.findIndex((l) => l.startsWith('1. '))
+    expect(at, prefix).toBeGreaterThan(-1)
+    expect(first, 'step 1').toBeGreaterThan(-1)
+    expect(first).toBeGreaterThan(at)
+    return text[at]
+  }
+  // Shared by every start-of-chat block, so the Order line is found one way, and only
+  // before step 1 [TAN-110, TAN-111].
   const orderPrefix = '- **Order:**'
-  const stepLines = () => section(startOfChat(), 'Steps').split(/\r?\n/)
+  const orderLine = (text: string[] = howToWorkLines()) => bullet(orderPrefix, text)
+  // Read inside each test, so a missing file fails those tests, not the file [TAN-105].
+  const startOfChat = () => read('.claude/skills/start-of-chat/SKILL.md')
+  // The one place the start-of-chat Steps section is read [TAN-111].
+  const stepLines = () => lines(section(startOfChat(), 'Steps'))
   const step = (n: number) => {
-    const line = section(startOfChat(), 'Steps')
-      .split(/\r?\n/)
-      .find((l) => l.startsWith(`${String(n)}. `))
+    const line = stepLines().find((l) => l.startsWith(`${String(n)}. `))
     expect(line, `step ${String(n)}`).toBeDefined()
     return line ?? ''
   }
@@ -47,8 +43,8 @@ describe('workflow docs', () => {
     [5, 'Delete the branch'],
     [6, 'Done'],
     [7, 'git pull'],
-  ])('@TAN-28 lifecycle step %i mentions "%s"', (step, text) => {
-    const line = lifecycle.split(/\r?\n/).find((l) => l.startsWith(`${String(step)}. `))
+  ])('@TAN-28 lifecycle step %i mentions "%s"', (n, text) => {
+    const line = lifecycle.split(/\r?\n/).find((l) => l.startsWith(`${String(n)}. `))
     expect(line).toContain(text)
   })
 
@@ -94,14 +90,14 @@ describe('workflow docs', () => {
 
   // A numbered step's own line and its indented sub-lines, up to the next step, in the
   // Ticket lifecycle unless another section is given [TAN-80, TAN-88].
-  function stepBlock(step: number, text: string = lifecycle): string[] {
-    const lines = text.split(/\r?\n/)
-    const start = lines.findIndex((l) => l.startsWith(`${String(step)}. `))
-    const end = lines.findIndex((l) => l.startsWith(`${String(step + 1)}. `))
-    expect(start, `step ${String(step)}`).toBeGreaterThan(-1)
-    expect(end, `step ${String(step + 1)}`).toBeGreaterThan(-1)
+  function stepBlock(n: number, text: string = lifecycle): string[] {
+    const all = lines(text)
+    const start = all.findIndex((l) => l.startsWith(`${String(n)}. `))
+    const end = all.findIndex((l) => l.startsWith(`${String(n + 1)}. `))
+    expect(start, `step ${String(n)}`).toBeGreaterThan(-1)
+    expect(end, `step ${String(n + 1)}`).toBeGreaterThan(-1)
     expect(end).toBeGreaterThan(start)
-    return lines.slice(start, end)
+    return all.slice(start, end)
   }
   const qaSections = [
     'Charters',
@@ -157,16 +153,14 @@ describe('workflow docs', () => {
   // found reaches every test. Literals are built from parts so this test never counts
   // itself [TAN-110].
   it('@TAN-110 the Order line, the start-of-chat skill read and the step finder are each defined once', () => {
-    const source = read('./workflow-docs.test.ts')
-    const count = (text: string) => source.split(text).length - 1
     for (const text of [
-      ['../.claude/skills/start-of-chat', 'SKILL.md'].join('/'),
-      ["startsWith('- **Order:", "**')"].join(''),
+      ['.claude/skills/start-of-chat', 'SKILL.md'].join('/'),
+      ["'- **Order:", "**'"].join(''),
       ['const step', ' = (n'].join(''),
     ]) {
-      expect(count(text), text).toBe(1)
+      expect(selfCount(text), text).toBe(1)
     }
-    expect(count(['const step5', ' ='].join('')), 'step5').toBe(0)
+    expect(selfCount(['const step5', ' ='].join('')), 'step5').toBe(0)
   })
 
   // A copy under another name still names the section, so the section name is the
@@ -179,11 +173,11 @@ describe('workflow docs', () => {
   // A parameter or local named step hides the step(n) helper inside its scope. The patterns
   // are built from parts so they never match themselves [TAN-111].
   it('@TAN-111 no parameter or local hides step', () => {
-    const source = read('./workflow-docs.test.ts')
+    const source = read('src/workflow-docs.test.ts')
     const parameter = new RegExp(['(^|[(,[{])\\s*', 'step', '\\s*[,:)=}\\]]'].join(''), 'm')
     expect(source).not.toMatch(parameter)
     const declaration = new RegExp(
-      ["(?<!['\"`])\\b(const|let|var|function)\\s+", 'step', '\\b'].join(''),
+      ['(?<![\'"`])\\b(const|let|var|function)\\s+', 'step', '\\b'].join(''),
       'g',
     )
     expect(source.match(declaration) ?? []).toHaveLength(1)
@@ -194,12 +188,10 @@ describe('workflow docs', () => {
     expect(selfCount(quoted), quoted).toBe(1)
     const call = ['bullet(', 'orderPrefix'].join('')
     expect(selfCount(call), call).toBe(1)
-    expect(() => orderLine(howToWorkLines().filter((l) => !l.startsWith('1. ')))).toThrow(
-      'step 1',
+    expect(() => orderLine(howToWorkLines().filter((l) => !l.startsWith('1. ')))).toThrow('step 1')
+    expect(() => orderLine(howToWorkLines().filter((l) => !l.startsWith(orderPrefix)))).toThrow(
+      orderPrefix,
     )
-    expect(() =>
-      orderLine(howToWorkLines().filter((l) => !l.startsWith(orderPrefix))),
-    ).toThrow(orderPrefix)
   })
 
   it.each(qaSections)('@TAN-80 the lifecycle lists the QA pack section "%s"', (name) => {
@@ -224,7 +216,7 @@ describe('workflow docs', () => {
 
   // The trial pack is the example the next session copies, so it keeps every section.
   it.each(qaSections)('@TAN-80 the TAN-20 QA pack has the section "%s"', (name) => {
-    const headings = read('../docs/qa/TAN-20.md')
+    const headings = read('docs/qa/TAN-20.md')
       .split(/\r?\n/)
       .filter((l) => l.startsWith('## '))
     expect(headings.some((h) => h.startsWith(`## ${name}`))).toBe(true)
@@ -234,18 +226,16 @@ describe('workflow docs', () => {
   // an owner decision, and approved ones are tracked in a register until corrected [TAN-88].
   describe('mockup rule', () => {
     const howToWork = section(claude, 'How to work')
-    const reviewer = read('../.claude/agents/plan-fidelity-reviewer.md')
-    const skill = read('../.claude/skills/review-loop/SKILL.md')
+    const reviewer = read('.claude/agents/plan-fidelity-reviewer.md')
+    const skill = read('.claude/skills/review-loop/SKILL.md')
     const register = () => section(decisions, 'Mockup departures')
     const header = '| Date | Ticket | Mockup | Mockup shows | Built | Kind | Corrected in |'
     // Every table line after the header and its separator, so a malformed row is checked,
     // not skipped.
     const rows = () => {
-      const lines = register()
-        .split(/\r?\n/)
-        .filter((l) => l.startsWith('|'))
-      expect(lines[0]).toBe(header)
-      return lines.slice(2)
+      const tableLines = lines(register()).filter((l) => l.startsWith('|'))
+      expect(tableLines[0]).toBe(header)
+      return tableLines.slice(2)
     }
     const cells = (row: string) =>
       row
@@ -339,20 +329,19 @@ describe('workflow docs', () => {
         'history-empty',
       ]
       const sources = ['home', 'new-session', 'session', 'history']
-      const readme = () => read('../docs/mockups/README.md')
+      const readme = () => read('docs/mockups/README.md')
       // Bytes, not utf8: decoding would corrupt the PNG header.
-      const bytes = (relative: string) =>
-        readFileSync(fileURLToPath(new URL(relative, import.meta.url)))
+      const bytes = (relative: string) => readFileSync(fromRoot(relative))
       const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
       it('@TAN-90 docs/mockups has one PNG per v0.1 screen state and the screen sources', () => {
         for (const state of states) {
-          const png = bytes(`../docs/mockups/${state}.png`)
+          const png = bytes(`docs/mockups/${state}.png`)
           expect(png.subarray(0, 8).equals(pngSignature), state).toBe(true)
           expect(png.readUInt32BE(16), state).toBe(1440)
         }
         for (const source of sources) {
-          expect(read(`../docs/mockups/source/${source}.dc.html`).length).toBeGreaterThan(0)
+          expect(read(`docs/mockups/source/${source}.dc.html`).length).toBeGreaterThan(0)
         }
         const listed = readme()
           .split(/\r?\n/)
@@ -416,20 +405,8 @@ describe('workflow docs', () => {
   // Every chat starts with a check of the Jira board, and the order of work is written
   // where Claude reads it: critical bugs, then process tickets, then design and story [TAN-91].
   describe('start of chat', () => {
-    const howToWork = () => section(claude, 'How to work').split(/\r?\n/)
-    // The bullet starting with the prefix, found before step 1. Both indexes are checked
-    // on their own, so a missing line fails with its name, not as a wrong order [TAN-105].
-    const bullet = (prefix: string, lines: string[] = howToWork()) => {
-      const at = lines.findIndex((l) => l.startsWith(prefix))
-      const first = lines.findIndex((l) => l.startsWith('1. '))
-      expect(at, prefix).toBeGreaterThan(-1)
-      expect(first, 'step 1').toBeGreaterThan(-1)
-      expect(first).toBeGreaterThan(at)
-      return lines[at]
-    }
-
     it('@TAN-105 the ordering check fails on its own assertion when a line is missing', () => {
-      const without = (prefix: string) => howToWork().filter((l) => !l.startsWith(prefix))
+      const without = (prefix: string) => howToWorkLines().filter((l) => !l.startsWith(prefix))
       expect(() => bullet('- **Start of chat:**', without('- **Start of chat:**'))).toThrow(
         '- **Start of chat:**',
       )
@@ -452,13 +429,13 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-91 the order puts critical bugs, then process tickets, first', () => {
-      expect(bullet('- **Order:**')).toContain(
+      expect(orderLine()).toContain(
         "bugs with priority High or Highest, then process tickets (label `build-log`), then each feature's design ticket and its story, then the rest",
       )
     })
 
     it('@TAN-91 CLAUDE.md says where tickets belong', () => {
-      const line = bullet('- **Order:**')
+      const line = orderLine()
       for (const text of [
         'Process tickets go into the active sprint when created and never get a Fix version',
         'waits in the backlog with no sprint and no version',
@@ -475,7 +452,7 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-91 review-loop follow-up tickets get their sprint and version by kind', () => {
-      const followUps = section(read('../.claude/skills/review-loop/SKILL.md'), 'Follow-up tickets')
+      const followUps = section(read('.claude/skills/review-loop/SKILL.md'), 'Follow-up tickets')
       expect(followUps).toContain('goes into the active sprint with no Fix version')
       expect(followUps).toContain('created with no sprint and no Fix version')
     })
@@ -483,9 +460,7 @@ describe('workflow docs', () => {
     it('@TAN-91 the start-of-chat skill covers the five parts', () => {
       const skill = startOfChat()
       expect(frontmatterField(skill, 'name')).toBe('start-of-chat')
-      const steps = section(skill, 'Steps')
-        .split(/\r?\n/)
-        .filter((l) => /^\d+\. /.test(l))
+      const steps = stepLines().filter((l) => /^\d+\. /.test(l))
       const prefixes = [
         '1. **Sprint:**',
         '2. **Done with no sprint or no Fix version:**',
@@ -717,7 +692,7 @@ describe('workflow docs', () => {
   // CLAUDE.md is trimmed to free room under its line budget. Each move checks the new
   // home and that the old text is gone, so a move that leaves a copy behind fails [TAN-100].
   describe('CLAUDE.md content moved out', () => {
-    const readme = read('../README.md')
+    const readme = read('README.md')
     const where = section(claude, 'Where things are')
     const rowsOf = (markdown: string, heading: string) => section(markdown, heading).split(/\r?\n/)
     const bullets = (text: string) => text.split(/\r?\n/).filter((l) => l.startsWith('- '))

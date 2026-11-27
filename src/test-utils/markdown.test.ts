@@ -38,7 +38,10 @@ describe('shared markdown helpers', () => {
       for (const [module, names] of Object.entries(imports)) {
         for (const name of names) {
           expect(source, `${file} imports ${name}`).toMatch(
-            new RegExp(`^import \\{[^}]*\\b${name}\\b[^}]*\\} from '\\./test-utils/${module}'`, 'm'),
+            new RegExp(
+              `^import \\{[^}]*\\b${name}\\b[^}]*\\} from '\\./test-utils/${module}'`,
+              'm',
+            ),
           )
         }
       }
