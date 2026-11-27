@@ -39,6 +39,7 @@ All data stays in your browser (IndexedDB). There is no backend.
 | `src/data/`     | IndexedDB access; the only place that touches storage   |
 | `src/i18n/`     | Language files; no UI text lives in components          |
 | `src/theme/`    | Color tokens, fonts, base styles and contrast checks    |
+| `src/test-utils/` | Helpers shared by unit tests (test code, not app code) |
 | `src/main.tsx`  | App entry point                                         |
 | `src/App.tsx`   | Root component                                          |
 
@@ -46,7 +47,7 @@ Components never call IndexedDB directly: they go through `src/data`. This keeps
 
 ## Tests
 
-- Unit tests (Vitest) live next to the code as `src/**/*.test.ts`.
+- Unit tests (Vitest) live next to the code as `src/**/*.test.ts`. Helpers shared by several test files live in `src/test-utils/`.
 - End-to-end tests (Playwright) live in `e2e/` and run against the production build in Chromium. The first run needs the browser: `npx playwright install chromium`.
 - Every test title starts with its Jira key, e.g. `@TAN-17 home screen and navigation`. ESLint enforces this for unit and end-to-end tests. Run one ticket's tests with `npx playwright test --grep @TAN-17`.
 - Prefer role and label locators (`getByRole`, `getByLabel`) over CSS selectors or test ids.
