@@ -17,7 +17,7 @@ describe('workflow docs', () => {
     const first = text.findIndex((l) => l.startsWith('1. '))
     expect(at, prefix).toBeGreaterThan(-1)
     expect(first, 'step 1').toBeGreaterThan(-1)
-    expect(first).toBeGreaterThan(at)
+    expect(first, `${prefix} before step 1`).toBeGreaterThan(at)
     return text[at]
   }
   // Shared by every start-of-chat block, so the Order line is found one way, and only
@@ -192,6 +192,10 @@ describe('workflow docs', () => {
     expect(() => orderLine(howToWorkLines().filter((l) => !l.startsWith(orderPrefix)))).toThrow(
       orderPrefix,
     )
+    // Every line kept, the Order line moved after step 1: only the ordering check fails.
+    const all = howToWorkLines()
+    const moved = [...all.filter((l) => !l.startsWith(orderPrefix)), orderLine(all) ?? '']
+    expect(() => orderLine(moved)).toThrow('before step 1')
   })
 
   it.each(qaSections)('@TAN-80 the lifecycle lists the QA pack section "%s"', (name) => {
