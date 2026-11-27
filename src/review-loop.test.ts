@@ -521,3 +521,36 @@ describe('hard rules, citations and open tickets', () => {
     expect(tan55).toContain('and by the TAN-101 row below')
   })
 })
+
+// Each helper is defined once, at module level, and each rule has one test. Literals are
+// built from parts so these tests never count themselves [TAN-110].
+describe('one definition per helper', () => {
+  const source = () => read('src/review-loop.test.ts')
+  const count = (text: string) => source().split(text).length - 1
+
+  it('@TAN-110 skill, codeReviewers and planReviewers are each defined once, at module level', () => {
+    for (const name of ['skill', 'codeReviewers', 'planReviewers']) {
+      expect(source().match(new RegExp(`^\\s*const ${name} =`, 'gm')) ?? [], name).toHaveLength(1)
+      expect(source(), `${name} at module level`).toMatch(new RegExp(`^const ${name} =`, 'm'))
+    }
+    for (const text of [
+      ['.claude/skills/review-loop', 'SKILL.md'].join('/'),
+      ['reviewers[name] === ', "'code'"].join(''),
+      ['reviewers[name] === ', "'plan'"].join(''),
+    ]) {
+      expect(count(text), text).toBe(1)
+    }
+  })
+
+  it("@TAN-110 only the exact-match test checks the code reviewers' minor line", () => {
+    const text = source()
+    expect(text).not.toContain(['@TAN-107 %s', 'keeps every minor as a ticket'].join(' '))
+    const call = ['minorLine', '('].join('')
+    expect(count(call), call).toBe(1)
+    const planTest = text.indexOf(['it.each(', 'planReviewers)'].join(''))
+    expect(planTest, 'plan reviewers test').toBeGreaterThan(-1)
+    const at = text.indexOf(call)
+    expect(at).toBeGreaterThan(planTest)
+    expect(at).toBeLessThan(text.indexOf('\n  it', planTest + 1))
+  })
+})

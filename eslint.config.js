@@ -108,7 +108,8 @@ export default defineConfig([
     // Hex is matched anywhere in a string (e.g. '1px solid #fff', fill='#fff'), so a
     // hex-shaped word like '#add' is a false positive: disable the line with a reason.
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['**/*.test.{ts,tsx}'],
+    // Test helpers are test code, like the test files [TAN-110].
+    ignores: ['**/*.test.{ts,tsx}', 'src/test-utils/**'],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -215,7 +216,7 @@ export default defineConfig([
   {
     // Components never touch IndexedDB: they go through src/data [TAN-14].
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/data/**', '**/*.test.{ts,tsx}'],
+    ignores: ['src/data/**', '**/*.test.{ts,tsx}', 'src/test-utils/**'],
     rules: {
       'no-restricted-globals': [
         'error',

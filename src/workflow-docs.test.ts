@@ -103,15 +103,19 @@ describe('workflow docs', () => {
     'Already automated',
   ]
   const qaPackLine = () => stepBlock(2).find((l) => l.startsWith('   - QA pack'))
+  // Both phrases of step 2 must be there before their order is compared [TAN-80, TAN-110].
+  const packBeforeReview = (stepLine: string) => {
+    const pack = stepLine.indexOf('stories also commit their QA pack')
+    const review = stepLine.indexOf('/review-loop code')
+    expect(pack).toBeGreaterThan(-1)
+    expect(review).toBeGreaterThan(pack)
+  }
 
   // The pack is committed before the code review, because gate-pr allows a merge only
   // when HEAD has been reviewed; tasks skip QA, so only stories have one [TAN-80].
   it("@TAN-80 lifecycle step 2 commits the story's QA pack before the code review", () => {
     const [stepLine = ''] = stepBlock(2)
-    const pack = stepLine.indexOf('stories also commit their QA pack')
-    const review = stepLine.indexOf('/review-loop code')
-    expect(pack).toBeGreaterThan(-1)
-    expect(review).toBeGreaterThan(pack)
+    packBeforeReview(stepLine)
     const subLine = qaPackLine()
     expect(subLine).toBeDefined()
     expect(subLine?.startsWith('   - QA pack (stories):')).toBe(true)
@@ -123,6 +127,36 @@ describe('workflow docs', () => {
     ]) {
       expect(subLine).toContain(text)
     }
+  })
+
+  // A missing line fails with its name, not as a wrong order [TAN-110].
+  it('@TAN-110 stepBlock and the QA-pack check fail by name when a line is missing', () => {
+    const without = (text: string, prefix: string) =>
+      text
+        .split(/\r?\n/)
+        .filter((l) => !l.startsWith(prefix))
+        .join('\n')
+    expect(() => stepBlock(2, without(lifecycle, '3. '))).toThrow('step 3')
+    const [stepLine = ''] = stepBlock(2)
+    expect(() => {
+      packBeforeReview(stepLine.replaceAll('/review-loop code', ''))
+    }).toThrow('/review-loop code')
+  })
+
+  // Each start-of-chat helper is defined once at this scope, so a change to how a line is
+  // found reaches every test. Literals are built from parts so this test never counts
+  // itself [TAN-110].
+  it('@TAN-110 the Order line, the start-of-chat skill read and the step finder are each defined once', () => {
+    const source = read('./workflow-docs.test.ts')
+    const count = (text: string) => source.split(text).length - 1
+    for (const text of [
+      ['../.claude/skills/start-of-chat', 'SKILL.md'].join('/'),
+      ["startsWith('- **Order:", "**')"].join(''),
+      ['const step', ' = (n'].join(''),
+    ]) {
+      expect(count(text), text).toBe(1)
+    }
+    expect(count(['const step5', ' ='].join('')), 'step5').toBe(0)
   })
 
   it.each(qaSections)('@TAN-80 the lifecycle lists the QA pack section "%s"', (name) => {

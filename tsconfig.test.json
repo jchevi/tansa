@@ -6,6 +6,7 @@
   },
   // Declaration files too: src/i18n/i18next.d.ts types t() keys and nothing imports it.
   // Any future src/**/*.d.ts also reaches the tests, which is harmless [TAN-13].
-  "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/*.d.ts"],
+  // Helpers shared by unit tests live in src/test-utils: test code, not app code [TAN-110].
+  "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/*.d.ts", "src/test-utils/**/*.ts"],
   "exclude": []
 }
