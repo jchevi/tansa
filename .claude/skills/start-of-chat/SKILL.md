@@ -31,6 +31,6 @@ Make a change only after the owner approves it in the chat. Then:
 - Set or clear a Fix version: `editJiraIssue` with `fixVersions`.
 - Rank tickets to the approved order: `editJiraIssue` with `rankBeforeIssue` or `rankAfterIssue`, top to bottom.
 - Record that a ticket stays: when the owner answers that a step 3 ticket stays, `addOrEditJiraIssueComment` on it with `Start of chat: planned in <open sprint or backlog>, <Fix version or no Fix version>, confirmed by the owner on <date>.`
-- Close, create or start a sprint: `manageJiraSprint` (`discover`, then `executeDestructive`), in this order: `create` on board 2 with the name, goal and dates; `addIssues` with the unfinished tickets; `close` on the old sprint; `start` on the new one. The tickets go in before the close so none falls into the backlog, and closing cannot be undone.
+- Close, create or start a sprint: `manageJiraSprint` (`discover`, then `executeDestructive`), in this order: `create` on board 2 with the name, goal and dates; `addIssues` with the unfinished tickets; `close` on the old sprint; `start` on the new one. The tickets go in before the close so none falls into the backlog, and closing cannot be undone. With no active sprint there is none to close: `create`, then `addIssues` with the tickets the owner approved for it (if any), then `start`.
 
 Report what changed, ticket by ticket.

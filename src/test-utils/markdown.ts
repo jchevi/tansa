@@ -15,6 +15,18 @@ export function frontmatter(markdown: string): Record<string, string> {
   return fields
 }
 
+// The lines of a text, for LF or CRLF files [TAN-111].
+export const lines = (text: string) => text.split(/\r?\n/)
+
+// The text of one "## " section, so a phrase found elsewhere in the file doesn't count.
+// A missing heading fails with its name [TAN-111].
+export function section(markdown: string, heading: string): string {
+  const start = markdown.indexOf(`\n## ${heading}\n`)
+  if (start === -1) throw new Error(`Section "## ${heading}" not found`)
+  const end = markdown.indexOf('\n## ', start + 1)
+  return markdown.slice(start, end === -1 ? undefined : end)
+}
+
 // One field, read through frontmatter(); a missing field fails with its name [TAN-105].
 export function frontmatterField(markdown: string, key: string): string {
   const value = frontmatter(markdown)[key]
