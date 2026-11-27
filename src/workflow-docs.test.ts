@@ -1,6 +1,6 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { fromRoot, read } from './test-utils/files'
+import { fromRoot, read, readBytes } from './test-utils/files'
 import { frontmatterField, lines, section } from './test-utils/markdown'
 
 describe('workflow docs', () => {
@@ -32,7 +32,7 @@ describe('workflow docs', () => {
   // picked instead [TAN-113].
   const processRows = () => lines(section(decisions, 'Process'))
   const processRow = (key: string, date: string, rows: string[] = processRows()) =>
-    rows.find((l) => l.startsWith(`| ${date} |`) && l.includes(key))
+    rows.find((l) => l.startsWith(`| ${date} |`) && l.includes(`(${key})`))
   const step = (n: number) => {
     const line = stepLines().find((l) => l.startsWith(`${String(n)}. `))
     expect(line, `step ${String(n)}`).toBeDefined()
@@ -49,14 +49,14 @@ describe('workflow docs', () => {
     [6, 'Done'],
     [7, 'git pull'],
   ])('@TAN-28 lifecycle step %i mentions "%s"', (n, text) => {
-    const line = lifecycle.split(/\r?\n/).find((l) => l.startsWith(`${String(n)}. `))
+    const line = lines(lifecycle).find((l) => l.startsWith(`${String(n)}. `))
     expect(line).toContain(text)
   })
 
   // One chat per ticket keeps its context, so the last step hands off the next ticket
   // instead of starting it here [TAN-67].
   it('@TAN-67 lifecycle step 8 hands off the next ticket in a new chat', () => {
-    const line = lifecycle.split(/\r?\n/).find((l) => l.startsWith('8. '))
+    const line = lines(lifecycle).find((l) => l.startsWith('8. '))
     expect(line).toBeDefined()
     for (const text of [
       'a short summary of the ticket',
@@ -72,7 +72,7 @@ describe('workflow docs', () => {
   // The hand-off prompt carries the follow-ups into the next chat, and it points at the
   // written order instead of leaving a new chat to guess it [TAN-68].
   it('@TAN-68 the hand-off prompt names its contents and where the order lives', () => {
-    const line = lifecycle.split(/\r?\n/).find((l) => l.startsWith('8. '))
+    const line = lines(lifecycle).find((l) => l.startsWith('8. '))
     for (const text of [
       'in the approved order (How to work → **Order:**)',
       'what merged',
@@ -86,8 +86,7 @@ describe('workflow docs', () => {
 
   // Step 8 is the last thing done for a ticket, after the sync [TAN-68].
   it('@TAN-68 the hand-off is the last lifecycle step', () => {
-    const numbers = lifecycle
-      .split(/\r?\n/)
+    const numbers = lines(lifecycle)
       .map((l) => /^(\d+)\. /.exec(l)?.[1])
       .filter((n) => n !== undefined)
     expect(numbers).toEqual(['1', '2', '3', '4', '5', '6', '7', '8'])
@@ -143,8 +142,7 @@ describe('workflow docs', () => {
   // A missing line fails with its name, not as a wrong order [TAN-110].
   it('@TAN-110 stepBlock and the QA-pack check fail by name when a line is missing', () => {
     const without = (text: string, prefix: string) =>
-      text
-        .split(/\r?\n/)
+      lines(text)
         .filter((l) => !l.startsWith(prefix))
         .join('\n')
     expect(() => stepBlock(2, without(lifecycle, '3. '))).toThrow('step 3')
@@ -208,14 +206,12 @@ describe('workflow docs', () => {
   })
 
   it('@TAN-80 lifecycle step 3 runs the session with its QA pack', () => {
-    const line = lifecycle.split(/\r?\n/).find((l) => l.startsWith('3. '))
+    const line = lines(lifecycle).find((l) => l.startsWith('3. '))
     expect(line).toContain('with its QA pack')
   })
 
   it('@TAN-80 a Process row explains the QA pack', () => {
-    const row = section(decisions, 'Process')
-      .split(/\r?\n/)
-      .find((l) => l.includes('`docs/qa/TAN-<n>.md`'))
+    const row = lines(section(decisions, 'Process')).find((l) => l.includes('`docs/qa/TAN-<n>.md`'))
     expect(row).toMatch(/^\| 2026-11-20 \|/)
     const why = row?.split(' | ').at(-1) ?? ''
     for (const text of ['not scripted cases', 'what tests cannot judge', '`gate-pr`']) {
@@ -225,9 +221,7 @@ describe('workflow docs', () => {
 
   // The trial pack is the example the next session copies, so it keeps every section.
   it.each(qaSections)('@TAN-80 the TAN-20 QA pack has the section "%s"', (name) => {
-    const headings = read('docs/qa/TAN-20.md')
-      .split(/\r?\n/)
-      .filter((l) => l.startsWith('## '))
+    const headings = lines(read('docs/qa/TAN-20.md')).filter((l) => l.startsWith('## '))
     expect(headings.some((h) => h.startsWith(`## ${name}`))).toBe(true)
   })
 
@@ -266,7 +260,7 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-88 the plan-fidelity reviewer checks every mockup departure is an owner decision', () => {
-      const check = reviewer.split(/\r?\n/).find((l) => l.startsWith('8. **Mockup**:'))
+      const check = lines(reviewer).find((l) => l.startsWith('8. **Mockup**:'))
       expect(check).toBeDefined()
       for (const text of [
         'Mockup check',
@@ -315,9 +309,7 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-88 a Process row explains the mockup rule', () => {
-      const row = section(decisions, 'Process')
-        .split(/\r?\n/)
-        .find((l) => l.includes('Mockup departures'))
+      const row = lines(section(decisions, 'Process')).find((l) => l.includes('Mockup departures'))
       expect(row).toMatch(/^\| 2026-11-2\d \|/)
       const why = row?.split(' | ').at(-1) ?? ''
       expect(why).toContain('TAN-21')
@@ -340,20 +332,18 @@ describe('workflow docs', () => {
       const sources = ['home', 'new-session', 'session', 'history']
       const readme = () => read('docs/mockups/README.md')
       // Bytes, not utf8: decoding would corrupt the PNG header.
-      const bytes = (relative: string) => readFileSync(fromRoot(relative))
       const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
       it('@TAN-90 docs/mockups has one PNG per v0.1 screen state and the screen sources', () => {
         for (const state of states) {
-          const png = bytes(`docs/mockups/${state}.png`)
+          const png = readBytes(`docs/mockups/${state}.png`)
           expect(png.subarray(0, 8).equals(pngSignature), state).toBe(true)
           expect(png.readUInt32BE(16), state).toBe(1440)
         }
         for (const source of sources) {
           expect(read(`docs/mockups/source/${source}.dc.html`).length).toBeGreaterThan(0)
         }
-        const listed = readme()
-          .split(/\r?\n/)
+        const listed = lines(readme())
           .filter((l) => l.startsWith('| `'))
           .map((l) => /^\| `([^`]+)\.png` \|/.exec(l)?.[1])
         expect(listed.sort()).toEqual([...states].sort())
@@ -373,7 +363,7 @@ describe('workflow docs', () => {
       })
 
       it('@TAN-90 the plan-fidelity reviewer opens the images the plan names', () => {
-        const check = reviewer.split(/\r?\n/).find((l) => l.startsWith('8. **Mockup**:'))
+        const check = lines(reviewer).find((l) => l.startsWith('8. **Mockup**:'))
         for (const text of [
           'Open with Read every image in `docs/mockups/`',
           'visible difference',
@@ -402,10 +392,9 @@ describe('workflow docs', () => {
       })
 
       it('@TAN-90 a Process row explains the mockup images', () => {
-        const row = section(decisions, 'Process')
-          .split(/\r?\n/)
-          .find((l) => l.startsWith('| 2026-11-25 |') && l.includes('`docs/mockups/`'))
+        const row = processRow('TAN-90', '2026-11-25')
         expect(row).toBeDefined()
+        expect(row).toContain('`docs/mockups/`')
         expect(row?.split(' | ').at(-1)).toContain('TAN-88')
       })
     })
@@ -467,8 +456,7 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-91 the start-of-chat skill covers the five parts', () => {
-      const skill = startOfChat()
-      expect(frontmatterField(skill, 'name')).toBe('start-of-chat')
+      expect(frontmatterField(startOfChat(), 'name')).toBe('start-of-chat')
       const steps = stepLines().filter((l) => /^\d+\. /.test(l))
       const prefixes = [
         '1. **Sprint:**',
@@ -484,14 +472,13 @@ describe('workflow docs', () => {
       expect(steps[2]?.startsWith('3. **Not planned in:** tickets not in Done only.')).toBe(true)
       expect(steps[2]).toContain('set after the sprint started')
       expect(steps[4]).toContain('**Order:**')
-      expect(section(skill, 'Changes')).toContain('only after the owner approves')
+      expect(section(startOfChat(), 'Changes')).toContain('only after the owner approves')
     })
 
     it('@TAN-91 a Process row explains the Start of chat check', () => {
-      const row = section(decisions, 'Process')
-        .split(/\r?\n/)
-        .find((l) => l.startsWith('| 2026-11-25 |') && l.includes('Start of chat'))
+      const row = processRow('TAN-91', '2026-11-25')
       expect(row).toBeDefined()
+      expect(row).toContain('Start of chat')
       const why = row?.split(' | ').at(-1) ?? ''
       expect(why).toContain('Sprint 1')
       expect(why).toContain('a TANSA version says nothing about them')
@@ -521,7 +508,7 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-102 the hand-off reviews the next group and updates the rank', () => {
-      const line = lifecycle.split(/\r?\n/).find((l) => l.startsWith('8. '))
+      const line = lines(lifecycle).find((l) => l.startsWith('8. '))
       expect(line).toContain("reviews the order of the next ticket's group")
       expect(line).toContain('updates the Jira rank once the owner approves the order')
     })
@@ -542,18 +529,18 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-102 start-of-chat has a Changes bullet for the rank', () => {
-      const rank = section(startOfChat(), 'Changes')
-        .split(/\r?\n/)
-        .find((l) => l.startsWith('- Rank tickets to the approved order:'))
+      const rank = lines(section(startOfChat(), 'Changes')).find((l) =>
+        l.startsWith('- Rank tickets to the approved order:'),
+      )
       expect(rank).toBeDefined()
       expect(rank).toContain('rankBeforeIssue')
       expect(rank).toContain('rankAfterIssue')
     })
 
     it('@TAN-102 a Process row explains the review', () => {
-      const row = section(decisions, 'Process')
-        .split(/\r?\n/)
-        .find((l) => l.startsWith('| 2026-11-26 |') && l.includes('TAN-102'))
+      const row = lines(section(decisions, 'Process')).find(
+        (l) => l.startsWith('| 2026-11-26 |') && l.includes('TAN-102'),
+      )
       expect(row).toBeDefined()
       const why = row?.split(' | ').at(-1) ?? ''
       expect(why).toContain('creation order')
@@ -565,9 +552,7 @@ describe('workflow docs', () => {
   // answer is remembered, and the helpers fail on their own assertion [TAN-105].
   describe('start-of-chat refinements', () => {
     const changesBullet = (prefix: string) => {
-      const line = section(startOfChat(), 'Changes')
-        .split(/\r?\n/)
-        .find((l) => l.startsWith(prefix))
+      const line = lines(section(startOfChat(), 'Changes')).find((l) => l.startsWith(prefix))
       expect(line, prefix).toBeDefined()
       return line ?? ''
     }
@@ -638,7 +623,7 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-105 lifecycle step 8 names the Order rule once', () => {
-      const line = lifecycle.split(/\r?\n/).find((l) => l.startsWith('8. '))
+      const line = lines(lifecycle).find((l) => l.startsWith('8. '))
       expect(line).toBeDefined()
       expect(line?.split('(How to work → **Order:**)')).toHaveLength(2)
     })
@@ -665,9 +650,9 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-105 a Process row explains the start-of-chat refinements', () => {
-      const row = section(decisions, 'Process')
-        .split(/\r?\n/)
-        .find((l) => l.startsWith('| 2026-11-26 |') && l.includes('TAN-105'))
+      const row = lines(section(decisions, 'Process')).find(
+        (l) => l.startsWith('| 2026-11-26 |') && l.includes('TAN-105'),
+      )
       expect(row).toBeDefined()
       // The Decision cell alone, since the Why names manageJiraSprint too.
       const decision = row?.split(' | ')[1] ?? ''
@@ -687,7 +672,7 @@ describe('workflow docs', () => {
 
   it('@TAN-28 CLAUDE.md and the decision log agree on merge commits', () => {
     expect(lifecycle).toContain('Merge with a merge commit (the only method the repo allows)')
-    const decision = decisions.split(/\r?\n/).find((l) => l.includes('Merge commits only'))
+    const decision = lines(decisions).find((l) => l.includes('Merge commits only'))
     expect(decision).toContain('squash and rebase disabled')
   })
 
@@ -703,8 +688,8 @@ describe('workflow docs', () => {
   describe('CLAUDE.md content moved out', () => {
     const readme = read('README.md')
     const where = section(claude, 'Where things are')
-    const rowsOf = (markdown: string, heading: string) => section(markdown, heading).split(/\r?\n/)
-    const bullets = (text: string) => text.split(/\r?\n/).filter((l) => l.startsWith('- '))
+    const rowsOf = (markdown: string, heading: string) => lines(section(markdown, heading))
+    const bullets = (text: string) => lines(text).filter((l) => l.startsWith('- '))
 
     it('@TAN-100 the commands live in the README, not in CLAUDE.md', () => {
       expect(claude).not.toContain('\n## Commands\n')
@@ -771,9 +756,9 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-100 a Process row records what moved where', () => {
-      const row = section(decisions, 'Process')
-        .split(/\r?\n/)
-        .find((l) => l.startsWith('| 2026-11-25 |') && l.includes('TAN-100'))
+      const row = lines(section(decisions, 'Process')).find(
+        (l) => l.startsWith('| 2026-11-25 |') && l.includes('TAN-100'),
+      )
       expect(row).toBeDefined()
       expect(row).toContain('README')
       expect(row).toContain('docs/decisions.md')

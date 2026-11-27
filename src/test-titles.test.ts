@@ -1,11 +1,11 @@
-import { fileURLToPath } from 'node:url'
 import { ESLint } from 'eslint'
 import { describe, expect, it } from 'vitest'
+import { fromRoot } from './test-utils/files'
 
 // Lints with the repo's real config, so the rule is proven to fire on Vitest files too.
 const eslint = new ESLint()
 // An existing test file, so typescript-eslint's project service accepts the text.
-const testFile = fileURLToPath(new URL('./ci-config.test.ts', import.meta.url))
+const testFile = fromRoot('src/ci-config.test.ts')
 
 async function rules(code: string) {
   const [result] = await eslint.lintText(code, { filePath: testFile })
