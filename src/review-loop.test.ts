@@ -518,6 +518,11 @@ describe('one definition per helper', () => {
     }
   })
 
+  it('@TAN-111 claude is defined once, at module level', () => {
+    expect(source().match(/^\s*const claude =/gm) ?? [], 'claude').toHaveLength(1)
+    expect(source(), 'claude at module level').toMatch(/^const claude =/m)
+  })
+
   it("@TAN-110 only the exact-match test checks the code reviewers' minor line", () => {
     const text = source()
     expect(text).not.toContain(['@TAN-107 %s', 'keeps every minor as a ticket'].join(' '))

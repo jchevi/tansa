@@ -19,12 +19,17 @@ describe('workflow docs', () => {
   const decisions = read('../docs/decisions.md')
   const lifecycle = section(claude, 'Ticket lifecycle')
   // Shared by every start-of-chat block, so each line is found one way [TAN-110].
-  const orderLine = () =>
+  const orderLine = (_text?: string[]) =>
     section(claude, 'How to work')
       .split(/\r?\n/)
       .find((l) => l.startsWith('- **Order:**'))
   // Read inside each test, so a missing file fails those tests, not the file [TAN-105].
   const startOfChat = () => read('../.claude/skills/start-of-chat/SKILL.md')
+  // How many times a text appears in this file, for the "found one way" checks [TAN-111].
+  const selfCount = (text: string) => read('./workflow-docs.test.ts').split(text).length - 1
+  const howToWorkLines = () => section(claude, 'How to work').split(/\r?\n/)
+  const orderPrefix = '- **Order:**'
+  const stepLines = () => section(startOfChat(), 'Steps').split(/\r?\n/)
   const step = (n: number) => {
     const line = section(startOfChat(), 'Steps')
       .split(/\r?\n/)
@@ -162,6 +167,39 @@ describe('workflow docs', () => {
       expect(count(text), text).toBe(1)
     }
     expect(count(['const step5', ' ='].join('')), 'step5').toBe(0)
+  })
+
+  // A copy under another name still names the section, so the section name is the
+  // marker [TAN-111].
+  it('@TAN-111 the start-of-chat Steps are found only through stepLines()', () => {
+    const marker = ["'Ste", "ps'"].join('')
+    expect(selfCount(marker), marker).toBe(1)
+  })
+
+  // A parameter or local named step hides the step(n) helper inside its scope. The patterns
+  // are built from parts so they never match themselves [TAN-111].
+  it('@TAN-111 no parameter or local hides step', () => {
+    const source = read('./workflow-docs.test.ts')
+    const parameter = new RegExp(['(^|[(,[{])\\s*', 'step', '\\s*[,:)=}\\]]'].join(''), 'm')
+    expect(source).not.toMatch(parameter)
+    const declaration = new RegExp(
+      ["(?<!['\"`])\\b(const|let|var|function)\\s+", 'step', '\\b'].join(''),
+      'g',
+    )
+    expect(source.match(declaration) ?? []).toHaveLength(1)
+  })
+
+  it('@TAN-111 the Order line is found only through orderLine(), which checks it comes before step 1', () => {
+    const quoted = ["'- **Order:", "**'"].join('')
+    expect(selfCount(quoted), quoted).toBe(1)
+    const call = ['bullet(', 'orderPrefix'].join('')
+    expect(selfCount(call), call).toBe(1)
+    expect(() => orderLine(howToWorkLines().filter((l) => !l.startsWith('1. ')))).toThrow(
+      'step 1',
+    )
+    expect(() =>
+      orderLine(howToWorkLines().filter((l) => !l.startsWith(orderPrefix))),
+    ).toThrow(orderPrefix)
   })
 
   it.each(qaSections)('@TAN-80 the lifecycle lists the QA pack section "%s"', (name) => {
@@ -569,6 +607,27 @@ describe('workflow docs', () => {
         return index
       })
       expect(at).toEqual([...at].sort((a, b) => a - b))
+    })
+
+    // With no active sprint there is no old sprint to close, and the tickets come from the
+    // backlog, so the sequence drops the close [TAN-111].
+    it('@TAN-111 with no active sprint the skill creates and starts one without a close', () => {
+      const line = changesBullet('- Close, create or start a sprint:')
+      const phrase = 'With no active sprint there is none to close'
+      const at = line.indexOf(phrase)
+      expect(at, phrase).toBeGreaterThan(-1)
+      const clause = line.slice(at)
+      const order = [
+        '`create`',
+        '`addIssues` with the tickets the owner approved for it (if any)',
+        '`start`',
+      ].map((text) => {
+        const index = clause.indexOf(text)
+        expect(index, text).toBeGreaterThan(-1)
+        return index
+      })
+      expect(order).toEqual([...order].sort((a, b) => a - b))
+      expect(clause).not.toContain('`close`')
     })
 
     it('@TAN-105 the skill no longer says there is no connector call for sprints', () => {
