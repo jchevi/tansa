@@ -211,7 +211,8 @@ describe('workflow docs', () => {
   })
 
   it('@TAN-80 a Process row explains the QA pack', () => {
-    const row = lines(section(decisions, 'Process')).find((l) => l.includes('`docs/qa/TAN-<n>.md`'))
+    const row = processRow('TAN-80', '2026-11-20')
+    expect(row).toContain('`docs/qa/TAN-<n>.md`')
     expect(row).toMatch(/^\| 2026-11-20 \|/)
     const why = row?.split(' | ').at(-1) ?? ''
     for (const text of ['not scripted cases', 'what tests cannot judge', '`gate-pr`']) {
@@ -309,7 +310,8 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-88 a Process row explains the mockup rule', () => {
-      const row = lines(section(decisions, 'Process')).find((l) => l.includes('Mockup departures'))
+      const row = processRow('TAN-88', '2026-11-24')
+      expect(row).toContain('Mockup departures')
       expect(row).toMatch(/^\| 2026-11-2\d \|/)
       const why = row?.split(' | ').at(-1) ?? ''
       expect(why).toContain('TAN-21')
@@ -538,9 +540,7 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-102 a Process row explains the review', () => {
-      const row = lines(section(decisions, 'Process')).find(
-        (l) => l.startsWith('| 2026-11-26 |') && l.includes('TAN-102'),
-      )
+      const row = processRow('TAN-102', '2026-11-26')
       expect(row).toBeDefined()
       const why = row?.split(' | ').at(-1) ?? ''
       expect(why).toContain('creation order')
@@ -650,9 +650,7 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-105 a Process row explains the start-of-chat refinements', () => {
-      const row = lines(section(decisions, 'Process')).find(
-        (l) => l.startsWith('| 2026-11-26 |') && l.includes('TAN-105'),
-      )
+      const row = processRow('TAN-105', '2026-11-26')
       expect(row).toBeDefined()
       // The Decision cell alone, since the Why names manageJiraSprint too.
       const decision = row?.split(' | ')[1] ?? ''
@@ -756,9 +754,7 @@ describe('workflow docs', () => {
     })
 
     it('@TAN-100 a Process row records what moved where', () => {
-      const row = lines(section(decisions, 'Process')).find(
-        (l) => l.startsWith('| 2026-11-25 |') && l.includes('TAN-100'),
-      )
+      const row = processRow('TAN-100', '2026-11-25')
       expect(row).toBeDefined()
       expect(row).toContain('README')
       expect(row).toContain('docs/decisions.md')
@@ -790,12 +786,19 @@ describe('workflow docs', () => {
       expect(processRow('TAN-90', '2026-11-26')).toBeUndefined()
     })
 
+    // Every Process-row test goes through processRow, so none can fall back to a lookup a
+    // same-date row would fool. Literals are built from parts so this test never counts
+    // itself [TAN-113].
+    it('@TAN-113 every Process row is found through processRow', () => {
+      const processSection = ["lines(section(decisions, 'Pro", "cess'))"].join('')
+      expect(selfCount(processSection), processSection).toBe(1)
+      const dateLookup = ["startsWith('| ", '20'].join('')
+      expect(selfCount(dateLookup), dateLookup).toBe(0)
+    })
+
     it('@TAN-113 every .claude link in Working with Claude Code points at a real path', () => {
-      const links = [
-        ...section(read('README.md'), 'Working with Claude Code').matchAll(
-          /\[`([^`]+)`\]\(([^)]+)\)/g,
-        ),
-      ]
+      const workflow = section(read('README.md'), 'Working with Claude Code')
+      const links = [...workflow.matchAll(/\[`([^`]+)`\]\(([^)]+)\)/g)]
         .map(([, text = '', target = '']) => ({ text, target }))
         .filter(({ text, target }) => text.startsWith('.claude') || target.startsWith('.claude'))
       expect(links.length).toBeGreaterThanOrEqual(4)
@@ -803,15 +806,20 @@ describe('workflow docs', () => {
         expect(target, text).toBe(text)
         expect(existsSync(fromRoot(target)), target).toBe(true)
       }
+      // A .claude path named in plain backticks is checked too, not only the links.
+      for (const [, path = ''] of workflow.matchAll(/`(\.claude[^`]*)`/g)) {
+        expect(existsSync(fromRoot(path)), path).toBe(true)
+      }
     })
 
     it('@TAN-113 the TAN-100 Process row names every move and states no new rule', () => {
       const row = processRow('TAN-100', '2026-11-25') ?? ''
+      // One phrase per move, since the bare names appear more than once in the row.
       for (const text of [
-        'Commands',
-        'IndexedDB',
-        'Working with Claude Code',
-        'Definition of Done',
+        'README (Commands, Folder structure)',
+        'The IndexedDB line under Stack is cut',
+        'a Working with Claude Code section',
+        '`docs/decisions.md` → Definition of Done',
       ]) {
         expect(row, text).toContain(text)
       }
@@ -839,6 +847,8 @@ describe('workflow docs', () => {
         return text.slice(start, end)
       }
       const one = step(1)
+      // The no-sprint case is named once, so the ended sentence cannot cover it too.
+      expect(one.split('no sprint is active'), 'no sprint is active').toHaveLength(2)
       const ended = clause(one, 'If today is past its end date', 'If no sprint is active')
       expect(ended).toContain('propose closing it and opening the next one')
       expect(ended).toContain('with the unfinished tickets that move into it')
@@ -853,6 +863,7 @@ describe('workflow docs', () => {
       expect(none).not.toContain('clos')
       expect(none).not.toContain('unfinished')
       const startLine = bullet('- **Start of chat:**') ?? ''
+      expect(startLine.split('none is active'), 'none is active').toHaveLength(2)
       expect(clause(startLine, 'if it has ended', 'if none is active')).toContain(
         'propose closing it and opening the next with its unfinished tickets',
       )

@@ -80,6 +80,7 @@ describe('shared markdown helpers', () => {
       const source = read(`src/${file}`)
       expect(source, `${file} import.meta.url`).not.toContain('import.meta.url')
       expect(source, `${file} readFileSync`).not.toContain('readFileSync')
+      expect(source, `${file} readFile`).not.toMatch(/\breadFile\b|node:fs\/promises/)
       expect(source, `${file} own helper`).not.toMatch(
         /(function|const)\s+(section|read|readBytes|lines|fromRoot|fromSrc)\b/,
       )
@@ -98,7 +99,7 @@ describe('shared markdown helpers', () => {
   it('@TAN-113 the start-of-chat skill, its Steps and the Order line are read in one place', () => {
     const sources = workflowTests.map((file) => read(`src/${file}`)).join('\n')
     const count = (pattern: RegExp) => sources.match(pattern)?.length ?? 0
-    expect(sources.split('start-of-chat/SKILL.md').length - 1, 'skill path').toBe(1)
+    expect(count(/start-of-chat\/SKILL\.md/g), 'skill path').toBe(1)
     expect(count(/['"`](## )?Steps['"`]/g), 'Steps').toBe(1)
     for (const text of ['startOfChat().', 'lines(startOfChat())', '= startOfChat()']) {
       expect(sources, text).not.toContain(text)
